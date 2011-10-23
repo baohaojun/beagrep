@@ -132,3 +132,4 @@ tools/DocExtractor.exe.mdb
 tools/beagle-doc-extractor
 beagled/Lucene.Net/Analysis/Standard/1.cs
 tools/beagle-static-query
+*.exe
