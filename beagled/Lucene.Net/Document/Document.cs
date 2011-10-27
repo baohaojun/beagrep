@@ -50,12 +50,12 @@ namespace Lucene.Net.Documents
 		{
 		}
 		
-        /// <summary>Returns the number of fields in this document</summary>
-        /// Added as a helper for Lucene.Net
-        public int GetFieldsCount()
-        {
-            return fields.Count;
-        }
+		/// <summary>Returns the number of fields in this document</summary>
+		/// Added as a helper for Lucene.Net
+		public int GetFieldsCount()
+		{
+			return fields.Count;
+		}
 		
 		
 		/// <summary>Sets a boost factor for hits on any field of this document.  This value
@@ -117,14 +117,14 @@ namespace Lucene.Net.Documents
 		{
 			System.Collections.IEnumerator it = fields.GetEnumerator();
 			while (it.MoveNext())
-			{
-				Fieldable field = (Fieldable) it.Current;
-				if (field.Name().Equals(name))
 				{
-					fields.Remove(field);
-					return ;
+					Fieldable field = (Fieldable) it.Current;
+					if (field.Name().Equals(name))
+						{
+							fields.Remove(field);
+							return ;
+						}
 				}
-			}
 		}
 		
 		/// <summary> <p>Removes all fields with the given name from the document.
@@ -137,15 +137,15 @@ namespace Lucene.Net.Documents
 		/// </summary>
 		public void  RemoveFields(System.String name)
 		{
-            for (int i = fields.Count - 1; i >= 0; i--)
-            {
-                Field field = (Field) fields[i];
-                if (field.Name().Equals(name))
-                {
-                    fields.RemoveAt(i);
-                }
-            }
-        }
+			for (int i = fields.Count - 1; i >= 0; i--)
+				{
+					Field field = (Field) fields[i];
+					if (field.Name().Equals(name))
+						{
+							fields.RemoveAt(i);
+						}
+				}
+		}
 		
 		/// <summary>Returns a field with the given name if any exist in this document, or
 		/// null.  If multiple fields exists with this name, this method returns the
@@ -155,11 +155,11 @@ namespace Lucene.Net.Documents
 		public Field GetField(System.String name)
 		{
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Field field = (Field) fields[i];
-				if (field.Name().Equals(name))
-					return field;
-			}
+				{
+					Field field = (Field) fields[i];
+					if (field.Name().Equals(name))
+						return field;
+				}
 			return null;
 		}
 		
@@ -171,11 +171,11 @@ namespace Lucene.Net.Documents
 		public Fieldable GetFieldable(System.String name)
 		{
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				if (field.Name().Equals(name))
-					return field;
-			}
+				{
+					Fieldable field = (Fieldable) fields[i];
+					if (field.Name().Equals(name))
+						return field;
+				}
 			return null;
 		}
 		
@@ -187,11 +187,11 @@ namespace Lucene.Net.Documents
 		public System.String Get(System.String name)
 		{
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				if (field.Name().Equals(name) && (!field.IsBinary()))
-					return field.StringValue();
-			}
+				{
+					Fieldable field = (Fieldable) fields[i];
+					if (field.Name().Equals(name) && (!field.IsBinary()))
+						return field.StringValue();
+				}
 			return null;
 		}
 		
@@ -226,13 +226,13 @@ namespace Lucene.Net.Documents
 		{
 			System.Collections.ArrayList result = new System.Collections.ArrayList();
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Field field = (Field) fields[i];
-				if (field.Name().Equals(name))
 				{
-					result.Add(field);
+					Field field = (Field) fields[i];
+					if (field.Name().Equals(name))
+						{
+							result.Add(field);
+						}
 				}
-			}
 			
 			if (result.Count == 0)
 				return null;
@@ -253,13 +253,13 @@ namespace Lucene.Net.Documents
 		{
 			System.Collections.ArrayList result = new System.Collections.ArrayList();
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				if (field.Name().Equals(name))
 				{
-					result.Add(field);
+					Fieldable field = (Fieldable) fields[i];
+					if (field.Name().Equals(name))
+						{
+							result.Add(field);
+						}
 				}
-			}
 			
 			if (result.Count == 0)
 				return null;
@@ -280,11 +280,11 @@ namespace Lucene.Net.Documents
 		{
 			System.Collections.ArrayList result = new System.Collections.ArrayList();
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				if (field.Name().Equals(name) && (!field.IsBinary()))
-					result.Add(field.StringValue());
-			}
+				{
+					Fieldable field = (Fieldable) fields[i];
+					if (field.Name().Equals(name) && (!field.IsBinary()))
+						result.Add(field.StringValue());
+				}
 			
 			if (result.Count == 0)
 				return null;
@@ -305,40 +305,40 @@ namespace Lucene.Net.Documents
 		{
 			System.Collections.IList result = new System.Collections.ArrayList();
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				if (field.Name().Equals(name) && (field.IsBinary()))
 				{
-					byte[] byteArray = field.BinaryValue();
-					byte[] resultByteArray = new byte[byteArray.Length];
-					for (int index = 0; index < byteArray.Length; index++)
-						resultByteArray[index] = (byte) byteArray[index];
+					Fieldable field = (Fieldable) fields[i];
+					if (field.Name().Equals(name) && (field.IsBinary()))
+						{
+							byte[] byteArray = field.BinaryValue();
+							byte[] resultByteArray = new byte[byteArray.Length];
+							for (int index = 0; index < byteArray.Length; index++)
+								resultByteArray[index] = (byte) byteArray[index];
 
-					result.Add(resultByteArray);
+							result.Add(resultByteArray);
+						}
 				}
-			}
 			
 			if (result.Count == 0)
 				return null;
 			
-            System.Collections.ICollection c = result;
-            System.Object[] objects = new byte[result.Count][];
+			System.Collections.ICollection c = result;
+			System.Object[] objects = new byte[result.Count][];
 
-            System.Type type = objects.GetType().GetElementType();
-            System.Object[] objs = (System.Object[]) Array.CreateInstance(type, c.Count );
+			System.Type type = objects.GetType().GetElementType();
+			System.Object[] objs = (System.Object[]) Array.CreateInstance(type, c.Count );
 
-            System.Collections.IEnumerator e = c.GetEnumerator();
-            int ii = 0;
+			System.Collections.IEnumerator e = c.GetEnumerator();
+			int ii = 0;
 
-            while (e.MoveNext())
-                objs[ii++] = e.Current;
+			while (e.MoveNext())
+				objs[ii++] = e.Current;
 
-            // If objects is smaller than c then do not return the new array in the parameter
-            if (objects.Length >= c.Count)
-                objs.CopyTo(objects, 0);
+			// If objects is smaller than c then do not return the new array in the parameter
+			if (objects.Length >= c.Count)
+				objs.CopyTo(objects, 0);
 
-            return (byte[][]) objs;
-        }
+			return (byte[][]) objs;
+		}
 		
 		/// <summary> Returns an array of bytes for the first (or only) field that has the name
 		/// specified as the method parameter. This method will return <code>null</code>
@@ -353,11 +353,11 @@ namespace Lucene.Net.Documents
 		public byte[] GetBinaryValue(System.String name)
 		{
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				if (field.Name().Equals(name) && (field.IsBinary()))
-					return field.BinaryValue();
-			}
+				{
+					Fieldable field = (Fieldable) fields[i];
+					if (field.Name().Equals(name) && (field.IsBinary()))
+						return field.BinaryValue();
+				}
 			return null;
 		}
 		
@@ -367,12 +367,12 @@ namespace Lucene.Net.Documents
 			System.Text.StringBuilder buffer = new System.Text.StringBuilder();
 			buffer.Append("Document<");
 			for (int i = 0; i < fields.Count; i++)
-			{
-				Fieldable field = (Fieldable) fields[i];
-				buffer.Append(field.ToString());
-				if (i != fields.Count - 1)
-					buffer.Append(" ");
-			}
+				{
+					Fieldable field = (Fieldable) fields[i];
+					buffer.Append(field.ToString());
+					if (i != fields.Count - 1)
+						buffer.Append(" ");
+				}
 			buffer.Append(">");
 			return buffer.ToString();
 		}
