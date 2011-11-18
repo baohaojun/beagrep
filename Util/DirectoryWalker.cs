@@ -39,42 +39,26 @@ namespace Beagle.Util {
 		public  delegate bool   FileFilter      (string path, string name);
 		private delegate object FileObjectifier (string path, string name);
 
-		[DllImport ("libc", SetLastError = true)]
-		private static extern IntPtr opendir ([MarshalAs (UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(Mono.Unix.Native.FileNameMarshaler))] string name);
-
-		[DllImport ("libc", SetLastError = true)]
-		private static extern int closedir (IntPtr dir);
-
-		[DllImport ("libbeagleglue", EntryPoint = "beagled_utils_readdir", SetLastError = true)]
-		private static extern int sys_readdir (IntPtr dir, [Out] byte[] buf, int max_len);
-		
 		private static Encoding filename_encoding = Encoding.Default;
 
-		private static string readdir (IntPtr dir, ref byte[] buffer)
+		private class FileEnumerator : IEnumerator {
+		private string readdir ()
 		{
 			int r = 0;
-
-			// We can reuse the same buffer since sys_readdir
-			// will fill up the rest of the space by null characters
-			r = sys_readdir (dir, buffer, buffer.Length); 
-			if (r == -1)
+			current_idx ++;
+			if (current_idx >= entries.Length) {
 				return null;
-
-			int n_chars = 0;
-			while (n_chars < buffer.Length && buffer [n_chars] != 0)
-				++n_chars;
-
-			return FileNameMarshaler.LocalToUTF8 (buffer, 0, n_chars);
+			}
+			return entries[current_idx];
 		}
 
-		private class FileEnumerator : IEnumerator {
 			
 			string path;
 			FileFilter file_filter;
 			FileObjectifier file_objectifier;
-			IntPtr dir_handle = IntPtr.Zero;
+			string[] entries;
+			int current_idx = -1;
 			string current;
-			byte[] buffer = new byte [256];
 
 			public bool NamesOnly = false;
 			
@@ -90,8 +74,6 @@ namespace Beagle.Util {
 			
 			~FileEnumerator ()
 			{
-				if (dir_handle != IntPtr.Zero)
-					closedir (dir_handle);
 			}
 
 			public object Current {
@@ -115,7 +97,7 @@ namespace Beagle.Util {
 				bool skip_file = false;
 
 				do {
-					current = readdir (dir_handle, ref buffer);
+					current = readdir ();
 					if (current == null)
 						break;
 
@@ -140,22 +122,16 @@ namespace Beagle.Util {
 
 				} while (skip_file);
 
-				if (current == null) {
-					closedir (dir_handle);
-					dir_handle = IntPtr.Zero;
-				}
-
 				return current != null;
 			}
 
 			public void Reset ()
 			{
 				current = null;
-				if (dir_handle != IntPtr.Zero)
-					closedir (dir_handle);
-				dir_handle = opendir (path);
-				if (dir_handle == IntPtr.Zero)
-					throw new DirectoryNotFoundException (path);
+				current_idx = -1;
+				if (entries == null) {
+					entries = Directory.GetFileSystemEntries(path);
+				}
 			}
 		}
 
@@ -199,12 +175,7 @@ namespace Beagle.Util {
 
 		static public bool IsWalkable (string path)
 		{
-			IntPtr dir_handle;
-			dir_handle = opendir (path);
-			if (dir_handle == IntPtr.Zero)
-				return false;
-			closedir (dir_handle);
-			return true;
+			return Directory.Exists(path);
 		}
 
 		/////////////////////////////////////////////////////////////////////////////////

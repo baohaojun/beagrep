@@ -26,16 +26,9 @@
  */
 
 #include <sys/types.h>
-#include <unistd.h>
-#include <linux/unistd.h>
 #include <errno.h>
 
-#ifdef __NR_gettid
-static pid_t gettid (void)
-{
-	return syscall(__NR_gettid);
-}
-#else
+#if 1
 static pid_t gettid (void)
 {
 	return 0;

@@ -432,7 +432,8 @@ namespace Lucene.Net.Index
 				// Clear the write lock in case it's leftover:
 				directory.ClearLock(IndexWriter.WRITE_LOCK_NAME);
 			}
-			
+Console.WriteLine ("Starting IndexWorker make lock");
+
 			Lock writeLock = directory.MakeLock(IndexWriter.WRITE_LOCK_NAME);
 			if (!writeLock.Obtain(writeLockTimeout))
 			// obtain write lock

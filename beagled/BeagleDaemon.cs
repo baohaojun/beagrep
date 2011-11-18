@@ -208,9 +208,8 @@ namespace Beagle.Daemon {
 
 			// Start our battery monitor so we can shut down the
 			// scheduler if needed.
-			BatteryMonitor.Init ();
 
-			bool initially_on_battery = ! BatteryMonitor.UsingAC && ! config.GetOption (Conf.Names.IndexOnBattery, false);
+			bool initially_on_battery = false;
 
 			// Start the Global Scheduler thread
 			if (! arg_disable_scheduler) {
@@ -273,9 +272,6 @@ namespace Beagle.Daemon {
 
 		public static void DoMain (string[] args)
 		{
-			SystemInformation.InternalCallInitializer.Init ();
-			SystemInformation.SetProcessName ("beagled");
-
 			// Process the command-line arguments
 			bool arg_debug = false;
 			bool arg_debug_memory = false;
@@ -494,9 +490,6 @@ namespace Beagle.Daemon {
 			else
 				Logger.Log.Debug ("Unable to establish a connection to the X server");
 			XSetIOErrorHandler (BeagleXIOErrorHandler);
-
-			// Lower our CPU priority
-			SystemPriorities.Renice (7);
 
 			QueryDriver.Init ();
 			Server.Init ();

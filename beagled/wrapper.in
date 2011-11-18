@@ -25,5 +25,5 @@ else
     export LD_LIBRARY_PATH="@pkglibdir@${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
 fi
 
-MONO_PATH="$THIS_PATH${MONO_PATH+:$MONO_PATH}" exec -a @wrapper@ mono $MONO_EXTRA_ARGS $THIS_EXE "$@"
+MONO_PATH="$THIS_PATH${MONO_PATH+:$MONO_PATH}" exec -a @wrapper@ mono $MONO_EXTRA_ARGS "$(cygpath -alw $THIS_EXE)" "$@"
 

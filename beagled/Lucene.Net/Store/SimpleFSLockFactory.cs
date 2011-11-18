@@ -97,6 +97,7 @@ namespace Lucene.Net.Store
 		
 		public override Lock MakeLock(System.String lockName)
 		{
+			Console.WriteLine ("Starting IndexWorker make lock sfs");
 			if (lockPrefix != null)
 			{
 				lockName = lockPrefix + "-" + lockName;
@@ -159,6 +160,7 @@ namespace Lucene.Net.Store
 		
 		public override bool Obtain()
 		{
+			return true;
 			
 			// Ensure that lockDir exists and is a directory:
 			bool tmpBool;
@@ -260,6 +262,7 @@ namespace Lucene.Net.Store
 		
 		public override void  Release()
 		{
+			return;
 			Beagle.Util.FileSystem.PosixDelete (lockFile.FullName);
 
 			if (System.IO.File.Exists(lockFile.FullName)) {

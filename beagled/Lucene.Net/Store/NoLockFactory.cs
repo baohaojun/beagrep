@@ -43,6 +43,7 @@ namespace Lucene.Net.Store
 		
 		public override Lock MakeLock(System.String lockName)
 		{
+			Console.WriteLine ("Starting IndexWorker make lock nol");
 			return singletonLock;
 		}
 		

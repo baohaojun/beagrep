@@ -117,7 +117,6 @@ namespace Beagle.Util {
 							Directory.CreateDirectory (storage_dir);
 							// Make sure that the directory is only
 							// readable by the owner.
-							Mono.Unix.Native.Syscall.chmod (storage_dir, (Mono.Unix.Native.FilePermissions) 448); // 448 == 0700
 						}
 					}
 				}

@@ -231,8 +231,6 @@ namespace Beagle.Daemon
 			}
 
 			// Set system priorities so we don't slow down the system
-			SystemPriorities.ReduceIoPriority ();
-			SystemPriorities.SetSchedulerPolicyBatch ();
 			
 			LuceneQueryingDriver driver_to_merge = new LuceneQueryingDriver (index_to_merge, -1, false);
 			
@@ -285,8 +283,6 @@ namespace Beagle.Daemon
 			LuceneIndexingDriver driver = new LuceneIndexingDriver (index_dir, false);
 
 			// Set system priorities so we don't slow down the system
-			SystemPriorities.ReduceIoPriority ();
-			SystemPriorities.SetSchedulerPolicyBatch ();
 
 			Stopwatch watch = new Stopwatch ();
 			watch.Start ();

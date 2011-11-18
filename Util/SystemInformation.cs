@@ -111,9 +111,6 @@ namespace Beagle.Util {
 			External = 2
 		}
 
-		[DllImport ("libbeagleglue.so")]
-		extern static unsafe int screensaver_glue_init ();
-
 		/// <summary>
 		/// BeagleDaemon needs to monitor screensaver status
 		/// for faster scheduling when user is idle.
@@ -126,55 +123,20 @@ namespace Beagle.Util {
 		/// </returns>
 		public static bool XssInit ()
 		{
-			int has_xss = screensaver_glue_init ();
+			int has_xss = 0;
 			use_screensaver = (has_xss == 1);
 			return use_screensaver;
 		}
 
-		[DllImport ("libbeagleglue.so")]
-		extern static unsafe int screensaver_info (ScreenSaverState *state,
-							   ScreenSaverKind *kind,
-							   ulong *til_or_since,
-							   ulong *idle);
 
 		private static void CheckScreenSaver ()
 		{
-			if (! use_screensaver)
-				return;
-
-			if (! Conf.Daemon.GetOption (Conf.Names.IndexFasterOnScreensaver, true)) {
-				cached_screensaver_running = false;
-				cached_screensaver_idle_time = 0;
-				return;
-			}
-
-			if ((DateTime.Now - screensaver_time).TotalSeconds < screensaver_poll_delay)
-				return;
-
-			ScreenSaverState state;
-			ScreenSaverKind kind;
-			ulong til_or_since = 0, idle = 0;
-			int retval;
-
-			unsafe {
-				retval = screensaver_info (&state, &kind, &til_or_since, &idle);
-			}
-
-			if (retval != 0) {
-				cached_screensaver_running = (state == ScreenSaverState.On);
-				cached_screensaver_idle_time = idle / 1000.0;
-			} else {
-				cached_screensaver_running = false;
-				cached_screensaver_idle_time = 0;
-			}
-
-			screensaver_time = DateTime.Now;
+			return;
 		}
 
 		public static bool ScreenSaverRunning {
 			get {
-				CheckScreenSaver ();
-				return cached_screensaver_running;
+				return false;
 			}
 		}
 
@@ -191,18 +153,12 @@ namespace Beagle.Util {
 
 		///////////////////////////////////////////////////////////////
 
-		[DllImport ("libbeagleglue")]
-		extern static int get_vmsize ();
-
-		[DllImport ("libbeagleglue")]
-		extern static int get_vmrss ();
-
 		public static int VmSize {
-			get { return get_vmsize (); }
+			get { return 1000; }
 		}
 
 		public static int VmRss {
-			get { return get_vmrss (); }
+			get { return 1000; }
 		}
 
 		public static void LogMemoryUsage ()
@@ -221,8 +177,6 @@ namespace Beagle.Util {
 		// class and initializer function.  Paolo says this is a *HUGE*
 		// unsupported hack and not to be surprised if it doesn't work.
 		public class InternalCallInitializer {
-			[DllImport ("libbeagleglue", EntryPoint="mono_glue_install_icall")]
-			public extern static void Init ();
 		}
 
 		[MethodImplAttribute (MethodImplOptions.InternalCall)]
@@ -340,13 +294,7 @@ namespace Beagle.Util {
 
 		public static bool IsPathOnBlockDevice (string path)
 		{
-			Mono.Unix.Native.Stat stat;
-			if (Mono.Unix.Native.Syscall.stat (path, out stat) != 0) {
-				Log.Warn ("Unable to stat() {0}: {1}", path, Mono.Unix.Native.Stdlib.strerror (Mono.Unix.Native.Stdlib.GetLastError ()));
-				return true;
-			}
-			
-			return (stat.st_dev >> 8 != 0);
+			return true;
 		}
 
 		///////////////////////////////////////////////////////////////
@@ -354,23 +302,8 @@ namespace Beagle.Util {
 		// From /usr/include/linux/prctl.h
 		private const int PR_SET_NAME = 15;
 
-		[DllImport("libc")] // Linux
-		private static extern int prctl (int option, byte [] arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5);
-
-		[DllImport ("libc")] // BSD
-		private static extern void setproctitle (byte [] fmt, byte [] str_arg);
-
 		public static void SetProcessName(string name)
 		{
-#if OS_LINUX
-			if (prctl (PR_SET_NAME, Encoding.ASCII.GetBytes (name + '\0'), 
-				   IntPtr.Zero, IntPtr.Zero, IntPtr.Zero) < 0) {
-				Logger.Log.Warn ("Couldn't set process name to '{0}': {1}", name,
-						 Mono.Unix.Native.Stdlib.GetLastError ());
-			}
-#elif OS_FREEBSD
-			setproctitle (Encoding.ASCII.GetBytes ("%s\0"), Encoding.ASCII.GetBytes (name + "\0"));
-#endif
 		}
 
 		///////////////////////////////////////////////////////////////

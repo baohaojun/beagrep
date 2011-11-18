@@ -223,7 +223,7 @@ public class QueryTool {
 		System.Environment.Exit (0);
 	}
 
-	[DllImport("libgobject-2.0.so.0")]
+	[DllImport("libgobject-2.0-0.dll")]
 	static extern void g_type_init ();
 
 	public static void Main (string[] args) 
