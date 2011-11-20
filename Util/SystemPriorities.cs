@@ -61,14 +61,6 @@ namespace Beagle.Util {
 
 		static public void Renice (int nice)
 		{
-			int prio = Mono.Unix.Native.Syscall.nice (nice);
-
-			if (prio < 0)
-				Log.Warn ("Unable to renice process to {0}", nice);
-			else if (prio == nice)
-				Log.Debug ("Reniced process to {0}", nice);
-			else
-				Log.Debug ("Process was already niced to {0}, not renicing to {1}", prio, nice);
 		}
 
 		//////////////////////////////////////////////////////////////

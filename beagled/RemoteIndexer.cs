@@ -277,7 +277,6 @@ namespace Beagle.Daemon {
 			}
 
 			Log.Debug ("Forwarding signal {0} ({1}) to index helper (pid {2})", (int) signal, signal, helper_pid);
-			Mono.Unix.Native.Syscall.kill (helper_pid, signal);
 		}
 	}
 }

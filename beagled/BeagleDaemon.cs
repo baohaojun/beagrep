@@ -116,7 +116,6 @@ namespace Beagle.Daemon {
 
 				if (send_sigprof) {
 					Log.Debug ("Suspicious memory size change detected.  Sending SIGPROF to ourself ({0})", sigprof_count++);
-					Mono.Unix.Native.Syscall.kill (System.Diagnostics.Process.GetCurrentProcess ().Id, Mono.Unix.Native.Signum.SIGPROF);
 				}
 			}
 		}

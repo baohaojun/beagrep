@@ -356,10 +356,6 @@ namespace Beagle.Daemon {
 			
 				if (! world_readable) {
 					// Make files only readable by the owner.
-					Mono.Unix.Native.Syscall.chmod (
-						path,
-						Mono.Unix.Native.FilePermissions.S_IRUSR |
-						Mono.Unix.Native.FilePermissions.S_IWUSR);
 				}
 
 				stream = file_stream;

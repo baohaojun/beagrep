@@ -70,6 +70,10 @@ namespace Beagle.Util {
 
 		static public Uri PathToFileUri (string path)
 		{
+			Console.WriteLine("path is {0}", path);
+			if (path[0] == '/') {
+				throw new Exception("Hello World");
+			}
 			return new Uri (PathToFileUriString (path), true);
 		}
 
@@ -98,9 +102,7 @@ namespace Beagle.Util {
 
 		static public string PathToFileUriString (string path)
 		{
-			return String.Concat (Uri.UriSchemeFile,
-					      Uri.SchemeDelimiter,
-					      StringFu.HexEscape (Path.GetFullPath (path)));
+			return new Uri(path).AbsoluteUri;
 		}
 
 		static public Uri EscapedStringToUri (string uri_string)

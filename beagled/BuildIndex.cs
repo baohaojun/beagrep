@@ -763,7 +763,7 @@ namespace Beagle.Daemon
 			}
 
 			public string FullName {
-				get { return path.Substring (7); }
+				get { return path.Substring (8); }
 			}
 		}
 		

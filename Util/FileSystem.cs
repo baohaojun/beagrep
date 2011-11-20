@@ -73,42 +73,18 @@ namespace Beagle.Util {
 		// I guess this is as good a place for this as any.
 		static public bool IsSymLink (string path)
 		{
-			Mono.Unix.Native.Stat stat;
-			Mono.Unix.Native.Syscall.lstat (path, out stat);
-			return (stat.st_mode & Mono.Unix.Native.FilePermissions.S_IFLNK) == Mono.Unix.Native.FilePermissions.S_IFLNK;
+			return false;
 		}
 
 
 		static public bool IsSpecialFile (string path)
 		{
-			Mono.Unix.Native.Stat stat;
-			Mono.Unix.Native.Syscall.lstat (path, out stat);
-
-			Mono.Unix.Native.FilePermissions type = (stat.st_mode & Mono.Unix.Native.FilePermissions.S_IFMT);
-
-			if (type == Mono.Unix.Native.FilePermissions.S_IFLNK
-			    || type == Mono.Unix.Native.FilePermissions.S_IFCHR
-			    || type == Mono.Unix.Native.FilePermissions.S_IFBLK
-			    || type == Mono.Unix.Native.FilePermissions.S_IFIFO
-			    || type == Mono.Unix.Native.FilePermissions.S_IFSOCK)
-				return true;
-
 			return false;
 		}
 
 		public static bool IsWritable (string path)
 		{
-			Mono.Unix.Native.Stat stat;
-			Mono.Unix.Native.Syscall.lstat (path, out stat);
-
-			Mono.Unix.Native.FilePermissions type = (stat.st_mode & Mono.Unix.Native.FilePermissions.S_IFMT);
-
-			if (type == Mono.Unix.Native.FilePermissions.S_IWUSR
-			    || type == Mono.Unix.Native.FilePermissions.S_IWGRP
-			    || type == Mono.Unix.Native.FilePermissions.S_IWOTH)
-				return true;
-
-			return false;
+			return true;
 		}
 
 		// Special version of this function which handles the root directory.
@@ -154,12 +130,7 @@ namespace Beagle.Util {
 		// tmp files.
 		public static void PosixDelete (string path)
 		{
-			int ret = Mono.Unix.Native.Syscall.unlink (path);
-		    	if (ret == -1)
-				throw new System.IO.IOException (String.Format (
-					    "Delete failed for {0}: {1}",
-					    path,
-					    Mono.Unix.Native.Stdlib.strerror (Mono.Unix.Native.Stdlib.GetLastError ())));
+			File.Delete(path);
 		}
 	}
 

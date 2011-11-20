@@ -181,7 +181,6 @@ namespace Beagle.Util {
 
 			string log_link;
 			log_link = Path.Combine (log_directory, "current-" + name);
-			Mono.Unix.Native.Syscall.symlink (log_path, log_link);
 
 			return writer;
 		}

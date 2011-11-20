@@ -23,7 +23,6 @@
  */
 
 #include <sys/time.h>
-#include <sys/resource.h>
 
 #include <glib.h>
 
@@ -38,18 +37,6 @@ typedef struct {
 
 static void limit_setup_func (gpointer user_data)
 {
-	LimitInfo *info = user_data;
-	struct rlimit rlim;
-
-	if (info->cpu_limit > 0) {
-		rlim.rlim_cur = rlim.rlim_max = info->cpu_limit;
-		setrlimit (RLIMIT_CPU, &rlim);
-	}
-
-	if (info->mem_limit > 0) {
-		rlim.rlim_cur = rlim.rlim_max = info->mem_limit;
-		setrlimit (RLIMIT_AS, &rlim);
-	}
 }	
 
 void
@@ -88,3 +75,4 @@ spawn_async_with_pipes_and_limits (char   **argv,
 				  stderr,
 				  error);
 }
+

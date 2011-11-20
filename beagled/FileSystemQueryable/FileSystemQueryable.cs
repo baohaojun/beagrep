@@ -1137,17 +1137,17 @@ namespace Beagle.Daemon.FileSystemQueryable {
 				}
 			}
 
-			Mono.Unix.Native.Stat stat;
+			FileInfo stat;
 			try {
-				Mono.Unix.Native.Syscall.stat (path, out stat);
+				stat = new FileInfo(path);
 			} catch (Exception ex) {
 				Logger.Log.Debug (ex, "Caught exception stat-ing {0}", path);
 				return RequiredAction.None;
 			}
 
 			DateTime last_write_time, last_attr_time;
-			last_write_time = DateTimeUtil.UnixToDateTimeUtc (stat.st_mtime);
-			last_attr_time = DateTimeUtil.UnixToDateTimeUtc (stat.st_ctime);
+			last_write_time = stat.LastWriteTime;
+			last_attr_time = last_write_time;
 
 			if (attr.LastWriteTime != last_write_time) {
 				if (Debug)

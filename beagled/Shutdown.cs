@@ -160,7 +160,6 @@ namespace Beagle.Daemon {
 				mainloop_finished = true;
 
 			// Stop the signal handler thread by sending a signal
-			Mono.Unix.Native.Syscall.kill (Process.GetCurrentProcess ().Id, Mono.Unix.Native.Signum.SIGINT);
 #endif
 		}
 
