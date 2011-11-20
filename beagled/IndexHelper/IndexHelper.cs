@@ -62,9 +62,6 @@ namespace Beagle.IndexHelper {
 
 		private static bool heap_shot = false;
 
-		[DllImport ("libc")]
-		extern static private int unsetenv (string name);
-
 		public static void Main (string [] args)
 		{
 			try {

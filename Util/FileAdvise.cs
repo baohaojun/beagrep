@@ -39,8 +39,10 @@ namespace Beagle.Util {
 
 		// FIXME: On 64-bit architectures, we need to use "long" not "int" here for
 		// "offset" and "len"
-		[DllImport ("libc", SetLastError=true)]
-		static extern int posix_fadvise (int fd, int offset, int len, int advice);
+
+		static int posix_fadvise (int fd, int offset, int len, int advice) {
+			return 0;
+		}
 
 		// The following are from /usr/include/linux/fadvise.h and will not change
 		private const int AdviseNormal = 0;	// POSIX_FADV_NORMAL

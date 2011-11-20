@@ -34,18 +34,9 @@ using System.Text;
 namespace Beagle.Util {
 	public class XdgMime {
 
-		[DllImport ("libbeagleglue")]
-		static extern IntPtr xdg_mime_get_mime_type_from_file_name (string file_name);
-
-		[DllImport ("libbeagleglue")]
-		static extern IntPtr xdg_mime_get_mime_type_for_data ([In] byte[] data, IntPtr len);
-
-		[DllImport ("libbeagleglue")]
-		static extern bool xdg_mime_mime_type_subclass (string subclass, string superclass);
-
 		public static string GetMimeTypeFromFileName (string file_name)
 		{
-			return Marshal.PtrToStringAnsi (xdg_mime_get_mime_type_from_file_name (file_name));
+			return UNKNOWN_MIME_TYPE;
 		}
 
 		private const string UNKNOWN_MIME_TYPE = "application/octet-stream";
@@ -86,10 +77,7 @@ namespace Beagle.Util {
 
 				fs.Close ();
 
-				if (len == 0)
-					content_mime_type = UNKNOWN_MIME_TYPE;
-				else
-					content_mime_type = Marshal.PtrToStringAnsi (xdg_mime_get_mime_type_for_data (buf, new IntPtr (len)));
+				content_mime_type = UNKNOWN_MIME_TYPE;
 				
 			} catch (UnauthorizedAccessException) {
 				content_mime_type = UNKNOWN_MIME_TYPE;
@@ -105,7 +93,7 @@ namespace Beagle.Util {
 			Console.WriteLine ("From content: [{0}]", content_mime_type);
 #endif
 
-			extension_mime_type = Marshal.PtrToStringAnsi (xdg_mime_get_mime_type_from_file_name (file_path));
+			extension_mime_type = UNKNOWN_MIME_TYPE;
 
 #if XDGMIME_DEBUG
 			Console.WriteLine ("From extension: [{0}]", extension_mime_type);
@@ -135,15 +123,7 @@ namespace Beagle.Util {
 					break;
 
 				default:
-					
-#if XDGMIME_DEBUG
-					Console.WriteLine ("extension mimetype subclass of content mimetype ? {0}", xdg_mime_mime_type_subclass (extension_mime_type, content_mime_type));
-#endif
-
-					if (xdg_mime_mime_type_subclass (extension_mime_type, content_mime_type))
-						mime_type = extension_mime_type;
-					else
-						mime_type = content_mime_type;
+					mime_type = extension_mime_type;
 					break;
 				}
 			}

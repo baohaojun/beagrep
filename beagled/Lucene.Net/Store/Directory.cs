@@ -89,7 +89,6 @@ namespace Lucene.Net.Store
 		/// </param>
 		public virtual Lock MakeLock(System.String name)
 		{
-			Console.WriteLine ("Starting IndexWorker make lock di");
 			return lockFactory.MakeLock(name);
 		}
 		/// <summary> Attempt to clear (forcefully unlock and remove) the

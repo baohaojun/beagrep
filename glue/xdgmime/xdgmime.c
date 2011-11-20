@@ -442,19 +442,12 @@ const char *
 xdg_mime_get_mime_type_for_data (const void *data,
 				 size_t      len)
 {
-  const char *mime_type;
 
-  xdg_mime_init ();
+  if (memchr (date, '\0', len)) {
+    return XDG_MIME_TYPE_UNKNOWN;
+  }
 
-  if (_caches)
-    return _xdg_mime_cache_get_mime_type_for_data (data, len);
-
-  mime_type = _xdg_mime_magic_lookup_data (global_magic, data, len, NULL, 0);
-
-  if (mime_type)
-    return mime_type;
-
-  return XDG_MIME_TYPE_UNKNOWN;
+  return "text/plain";
 }
 
 const char *
@@ -747,9 +740,7 @@ int
 xdg_mime_mime_type_subclass (const char *mime,
 			     const char *base)
 {
-  xdg_mime_init ();
-
-  return _xdg_mime_mime_type_subclass (mime, base);
+  return 1;
 }
 
 char **

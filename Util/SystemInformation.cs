@@ -39,8 +39,12 @@ namespace Beagle.Util {
 
 	public class SystemInformation {
 
-		[DllImport ("libc", SetLastError=true)]
-		static extern int getloadavg (double[] loadavg, int nelem);
+		static int getloadavg (double[] loadavg, int nelem) {
+			for (int i = 0; i < nelem; i++) {
+				loadavg[i] = 1;
+			}
+			return nelem;
+		}
 
 		const double loadavg_poll_delay = 3;
 		private static DateTime proc_loadavg_time  = DateTime.MinValue;
@@ -176,8 +180,6 @@ namespace Beagle.Util {
 		// class that uses them.  That's why we have this retarded extra
 		// class and initializer function.  Paolo says this is a *HUGE*
 		// unsupported hack and not to be surprised if it doesn't work.
-		public class InternalCallInitializer {
-		}
 
 		[MethodImplAttribute (MethodImplOptions.InternalCall)]
 		public extern static int GetObjectSizeIcall (object o);
@@ -248,6 +250,12 @@ namespace Beagle.Util {
 		// Get the (major,minor) pair for the block device from which the index is mounted.
 		private static void GetIndexDev ()
 		{
+			try {
+				throw new Exception("hello world GetIndexDev");
+			} catch (Exception e) {
+				Console.WriteLine("GetIndexDev called: {0}", e);
+			}
+
 			Mono.Unix.Native.Stat stat;
 			if (Mono.Unix.Native.Syscall.stat (PathFinder.StorageDir, out stat) != 0)
 				return;

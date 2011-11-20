@@ -1137,16 +1137,15 @@ namespace Beagle.Daemon.FileSystemQueryable {
 				}
 			}
 
-			FileInfo stat;
+			DateTime last_write_time, last_attr_time;
+
 			try {
-				stat = new FileInfo(path);
+				last_write_time = File.GetLastWriteTime(path);
 			} catch (Exception ex) {
 				Logger.Log.Debug (ex, "Caught exception stat-ing {0}", path);
 				return RequiredAction.None;
 			}
 
-			DateTime last_write_time, last_attr_time;
-			last_write_time = stat.LastWriteTime;
 			last_attr_time = last_write_time;
 
 			if (attr.LastWriteTime != last_write_time) {

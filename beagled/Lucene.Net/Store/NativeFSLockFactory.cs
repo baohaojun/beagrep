@@ -171,7 +171,6 @@ namespace Lucene.Net.Store
 
 		public override Lock MakeLock(System.String lockName)
 		{
-			Console.WriteLine ("Starting IndexWorker make lock nfs");
 			lock (this)
 			{
 				if (lockPrefix != null)

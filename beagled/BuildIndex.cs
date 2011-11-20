@@ -443,24 +443,17 @@ namespace Beagle.Daemon
 			int count_files = 0;
 
 			Indexable indexable;
-			Logger.Log.Debug ("Starting IndexWorker");
 			pending_request = new IndexerRequest ();
-			Logger.Log.Debug ("Starting IndexWorker");
 			Queue modified_directories = new Queue ();
-			Logger.Log.Debug ("Starting IndexWorker");
 			
 			while (pending_directories.Count > 0) {
-				Logger.Log.Debug ("Starting IndexWorker");
 				DirectoryInfo dir = (DirectoryInfo) pending_directories.Dequeue ();
-				Logger.Log.Debug ("Starting IndexWorker");
 
 				AddToRequest (DirectoryToIndexable (dir, modified_directories));
-				Logger.Log.Debug ("Starting IndexWorker");
 
 				try {
 					if (arg_recursive)
 						foreach (DirectoryInfo subdir in DirectoryWalker.GetDirectoryInfos (dir)) {
-							Logger.Log.Debug ("Starting IndexWorker");
 							if (!Ignore (subdir)
 							    && !FileSystem.IsSpecialFile (subdir.FullName))
 								pending_directories.Enqueue (subdir);

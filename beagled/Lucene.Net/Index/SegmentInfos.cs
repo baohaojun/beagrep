@@ -574,7 +574,7 @@ namespace Lucene.Net.Index
 							{
 								s += (" " + files[i]);
 							}
-							throw new System.IO.FileNotFoundException("no segments* file found: files:" + s);
+							throw new System.IO.FileNotFoundException("no segments* file found: files:" + s + files.Length);
 						}
 					}
 					

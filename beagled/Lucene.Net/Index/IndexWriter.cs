@@ -432,7 +432,6 @@ namespace Lucene.Net.Index
 				// Clear the write lock in case it's leftover:
 				directory.ClearLock(IndexWriter.WRITE_LOCK_NAME);
 			}
-Console.WriteLine ("Starting IndexWorker make lock");
 
 			Lock writeLock = directory.MakeLock(IndexWriter.WRITE_LOCK_NAME);
 			if (!writeLock.Obtain(writeLockTimeout))
@@ -458,6 +457,7 @@ Console.WriteLine ("Starting IndexWorker make lock");
 					catch (System.IO.IOException e)
 					{
 						// Likely this means it's a fresh directory
+						Console.WriteLine("got exception e: {0}", e);
 					}
 					segmentInfos.Write(directory);
 				}

@@ -38,7 +38,6 @@ namespace Lucene.Net.Store
 		
 		public override Lock MakeLock(System.String lockName)
 		{
-Console.WriteLine ("Starting IndexWorker make lock silf");
 			// We do not use the LockPrefix at all, because the private
 			// HashSet instance effectively scopes the locking to this
 			// single Directory instance.

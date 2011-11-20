@@ -37,7 +37,6 @@
 #include <fnmatch.h>
 #include <assert.h>
 
-#include <netinet/in.h> /* for ntohl/ntohs */
 
 #ifdef HAVE_MMAP
 #include <sys/mman.h>

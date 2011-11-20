@@ -17,6 +17,7 @@
 
 using System;
 using Mono.Unix.Native;
+using System.Runtime.InteropServices;
 
 namespace Lucene.Net.Store
 {
@@ -97,7 +98,6 @@ namespace Lucene.Net.Store
 		
 		public override Lock MakeLock(System.String lockName)
 		{
-			Console.WriteLine ("Starting IndexWorker make lock sfs");
 			if (lockPrefix != null)
 			{
 				lockName = lockPrefix + "-" + lockName;
@@ -151,36 +151,42 @@ namespace Lucene.Net.Store
 		
 		internal System.IO.FileInfo lockFile;
 		internal System.IO.FileInfo lockDir;
+		internal IntPtr mutexHandle;
 		
 		public SimpleFSLock(System.IO.FileInfo lockDir, System.String lockFileName)
 		{
 			this.lockDir = lockDir;
 			lockFile = new System.IO.FileInfo(System.IO.Path.Combine(lockDir.FullName, lockFileName));
 		}
+
+		[DllImport("kernel32.dll", CharSet=CharSet.Auto, SetLastError=true)]
+			public static extern IntPtr CreateMutex(IntPtr lpSecurityAttributes, bool initialOwner, string name);
+		[DllImport("kernel32.dll", SetLastError=true)]
+			internal static extern bool ReleaseMutex(IntPtr handle);
+		
 		
 		public override bool Obtain()
 		{
+			if (! mutexHandle.Equals(IntPtr.Zero)) {
+				return true;
+			}
+			mutexHandle = CreateMutex(IntPtr.Zero, true, lockFile.ToString().Replace('\\', '/') );
+			if (mutexHandle.Equals(IntPtr.Zero)) {
+				Console.WriteLine("return value is 0, err {0}, path {1}", Marshal.GetLastWin32Error(), lockFile.ToString().Replace('\\', '/'));
+				return false;
+			}
 			return true;
 		}
 		
 		public override void  Release()
 		{
-			return;
-			Beagle.Util.FileSystem.PosixDelete (lockFile.FullName);
-
-			if (System.IO.File.Exists(lockFile.FullName)) {
-				Beagle.Util.Logger.Log.Warn ("Release didnt delete lockfile {0}.", lockFile.FullName);
-			}
+			ReleaseMutex(mutexHandle);
+			mutexHandle = IntPtr.Zero;
 		}
 		
 		public override bool IsLocked()
 		{
-			bool tmpBool;
-			if (System.IO.File.Exists(lockFile.FullName))
-				tmpBool = true;
-			else
-				tmpBool = System.IO.Directory.Exists(lockFile.FullName);
-			return tmpBool;
+			return ! mutexHandle.Equals(IntPtr.Zero);
 		}
 		
 		public override System.String ToString()

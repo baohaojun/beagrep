@@ -108,7 +108,12 @@ namespace Beagle.Util {
 				// console redirection above, which is good.
 				StreamWriter sw = (StreamWriter) log_writer;
 				FileStream fs = (FileStream) sw.BaseStream;
-				int fd = (int) fs.Handle;
+							try {
+				throw new Exception("hello world GetIndexDev");
+			} catch (Exception e) {
+				Console.WriteLine("GetIndexDev called: {0}", e);
+			}
+int fd = (int) fs.Handle;
 				Mono.Unix.Native.Syscall.dup2 (fd, 1); // stdout
 				Mono.Unix.Native.Syscall.dup2 (fd, 2); // stderr
 

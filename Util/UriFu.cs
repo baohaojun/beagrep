@@ -70,7 +70,6 @@ namespace Beagle.Util {
 
 		static public Uri PathToFileUri (string path)
 		{
-			Console.WriteLine("path is {0}", path);
 			if (path[0] == '/') {
 				throw new Exception("Hello World");
 			}
