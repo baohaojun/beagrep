@@ -362,7 +362,7 @@ AC_SUBST(GTK_BINARY_VERSION)
 
 dnl For the systeminfo glue
 
-SYSTEMINFO_GLUE_X_LIBS="$X_PRE_LIBS $X_LIBS -lX11 $XSS_LIBS $X_EXTRA_LIBS"
+SYSTEMINFO_GLUE_X_LIBS=""
 AC_SUBST(SYSTEMINFO_GLUE_X_LIBS)
 
 dnl ----------------------------------------------

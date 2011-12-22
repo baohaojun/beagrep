@@ -3,8 +3,7 @@ INCLUDES = $(MONO_CFLAGS)
 EXTRA_GLUE_SOURCES =
 EXTRA_GLUE_LIBADD =
 
-BEAGLED_GLUE_SOURCES =		\
-	beagled-utils.c
+BEAGLED_GLUE_SOURCES = 
 
 if ENABLE_INOTIFY
 EXTRA_GLUE_SOURCES +=		\
@@ -15,9 +14,7 @@ SPAWN_GLUE_SOURCES =		\
 	spawn-glue.c
 
 SYSINFO_GLUE_SOURCES =		\
-	screensaver-glue.c	\
-	thread-glue.c		\
-	vmsize-glue.c
+	thread-glue.c
 
 SYSINFO_GLUE_LIBADD = $(MONO_LIBS)
 
