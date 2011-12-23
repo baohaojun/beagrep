@@ -31,7 +31,7 @@ libbeagleglue_la_SOURCES = 		\
 libbeagleglue_la_LDFLAGS     = -no-undefined -version-info 0:0:0
 
 libbeagleglue_la_LIBADD =	\
-	-L/c/PROGRA~1/MONO-2~1.6/bin -lglib-2.0-0 -lintl \
+	-L/c/PROGRA~1/MONO-2~1.6/bin -lglib-2.0-0 \
 	$(SYSINFO_GLUE_LIBADD)	\
 	$(EXTRA_GLUE_LIBADD) 
 
