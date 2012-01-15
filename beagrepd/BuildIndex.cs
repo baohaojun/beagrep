@@ -59,13 +59,10 @@ namespace Beagrep.Daemon
 		static bool arg_recursive, arg_delete, arg_debug;
 		static bool arg_cache_text, arg_disable_filtering;
 		static bool arg_disable_restart, arg_disable_directories;
-		static bool arg_disable_on_battery;
 		static string arg_output, arg_tag, arg_source;
 
 		/////////////////////////////////////////////////////////
 
-		// Removable index related options
-		static string mnt_dir = null;
 
 		/////////////////////////////////////////////////////////
 
@@ -177,10 +174,6 @@ namespace Beagrep.Daemon
 
 				case "--disable-filtering":
 					arg_disable_filtering = true;
-					break;
-
-				case "--disable-on-battery":
-					arg_disable_on_battery = true;
 					break;
 
 				case "--allow-pattern":
@@ -326,7 +319,6 @@ namespace Beagrep.Daemon
 				arg_source = prev_source;
 			}
 
-			// Removable media related options
 
 			if (arg_source == null) {
 				DirectoryInfo dir = new DirectoryInfo (StringFu.SanitizePath (arg_output));
@@ -721,10 +713,6 @@ namespace Beagrep.Daemon
 			return indexable;
 		}
 
-		////////////////////////////////////////////////////
-		// Methods to generate the relative path and
-		// uri for removable sources.
-
 		static string PathInIndex (string fullpath)
 		{
 			return fullpath;
@@ -934,13 +922,6 @@ namespace Beagrep.Daemon
 				"  --deny-pattern [pattern]\tKeep any files that match the pattern from being indexed.\n" + 
 				"  --disable-restart\t\tDon't restart when memory usage gets above a certain threshold.\n" +
 				"  --disable-on-battery\t\tDisable indexer while on battery power.\n";
-
-			usage +="\n" +
-				"Removable media options:\n" +
-				"  --removable\t\t\tCreate a removable media.\n" +
-				"\n" +
-				" * Use --source [name] to specify a name for the removable media.\n" +
-				" * You can specify only one <path>. Paths will be stored relative to <path>.\n";
 
 			Console.WriteLine (usage);
 			Environment.Exit (0);
