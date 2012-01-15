@@ -74,7 +74,6 @@ UTIL_CSFILES = 			        	\
 	$(srcdir)/VersionFu.cs			\
 	$(srcdir)/XdgMime.cs			\
 	$(srcdir)/XmlFu.cs			\
-	$(srcdir)/Hal/PropertyModification.cs	\
 	$(srcdir)/QueryKeywordMapping.cs
 
 # To reduce dependencies and other reasons, we don't build this

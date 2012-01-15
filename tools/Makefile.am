@@ -27,7 +27,7 @@ WRAPPER_SED = sed 					\
 
 BREAK_WORDS_TARGET = BreakWords.exe
 BREAK_WORDS_WRAPPER = beagrep-break-words
-BREAK_WORDS_CSFILES = $(foreach cs, BreakWords.cs StandardTokenizerImpl.cs Token.cs, $(srcdir)/$(cs))
+BREAK_WORDS_CSFILES = $(foreach cs,BreakWords.cs StandardTokenizerImpl.cs Token.cs,$(shell if test -L $(srcdir)/$(cs); then readlink $(srcdir)/$(cs); else echo $(srcdir)/$(cs); fi))
 $(BREAK_WORDS_TARGET): $(BREAK_WORDS_CSFILES)
 	$(CSC) -out:$@ $(CSFLAGS) $(BREAK_WORDS_CSFILES)
 
