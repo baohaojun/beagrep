@@ -32,7 +32,7 @@ using System.Text;
 
 using Mono.Unix.Native;
 
-namespace Beagle.Util {
+namespace Beagrep.Util {
 
 	public class DirectoryWalker {
 

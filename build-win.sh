@@ -11,4 +11,4 @@ cd $(dirname $0)
 ./configure --prefix=$(wlp /usr/local)
 make -j8 -k
 make install
-cp /usr/local/lib/bin/cygbeagleglue-0.dll ~/bin/windows/ext/libbeagleglue.dll
+cp /usr/local/lib/bin/cygbeagrepglue-0.dll ~/bin/windows/ext/libbeagrepglue.dll

@@ -32,28 +32,28 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Mono.Unix.Native;
 
-namespace Beagle.Util {
+namespace Beagrep.Util {
 
 	public class ExtendedAttribute {
 
 		// FIXME: Deprecate post 0.3.3
 
-		private const string AttrName = "user.Beagle";
+		private const string AttrName = "user.Beagrep";
 
 		static Encoding encoding = new UTF8Encoding ();
 
-		// Set a beagle attribute
+		// Set a beagrep attribute
 		public static void Set (string path, string value) {
 			Set (path, AttrName, value);
 		}
 
-		// Set a non-beagle attribute
+		// Set a non-beagrep attribute
 		private static void Set (string path, string name, string value)
 		{
 			throw new IOException ("Could not set extended attribute on " + path);
 		}
 
-		// Check if a beagle attribute exists
+		// Check if a beagrep attribute exists
 		public static bool Exists (string path)
 		{
 			return false;
@@ -65,19 +65,19 @@ namespace Beagle.Util {
 			return false;
 		}
 
-		// Get a beagle attribute
+		// Get a beagrep attribute
 		public static string Get (string path)
 		{
 			return null;
 		}
 
-		// Get a non-beagle attribute
+		// Get a non-beagrep attribute
 		public static string Get (string path, string name)
 		{
 			return null;
 		}
 
-		// Remove a beagle attribute
+		// Remove a beagrep attribute
 		public static void Remove (string path)
 		{
 			throw new IOException ("Could not remove extended attribute on " + path);
@@ -89,7 +89,7 @@ namespace Beagle.Util {
 			Remove (path);
 		}
 
-		// Remove a non-beagle attribute
+		// Remove a non-beagrep attribute
 		private static void Remove (string path, string name)
 		{
 			throw new IOException ("Could not remove extended attribute on " + path);

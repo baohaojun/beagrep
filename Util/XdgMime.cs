@@ -31,7 +31,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Beagle.Util {
+namespace Beagrep.Util {
 	public class XdgMime {
 
 		public static string GetMimeTypeFromFileName (string file_name)

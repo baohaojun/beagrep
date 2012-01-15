@@ -35,7 +35,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Beagle.Util {
+namespace Beagrep.Util {
 
 	public class SystemInformation {
 
@@ -116,10 +116,10 @@ namespace Beagle.Util {
 		}
 
 		/// <summary>
-		/// BeagleDaemon needs to monitor screensaver status
+		/// BeagrepDaemon needs to monitor screensaver status
 		/// for faster scheduling when user is idle.
 		/// IndexHelper does not need to monitor screensaver status.
-		/// XssInit is only called from the BeagleDaemon.
+		/// XssInit is only called from the BeagrepDaemon.
 		///
 		/// </summary>
 		/// <returns>
