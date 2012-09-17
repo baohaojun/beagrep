@@ -8,11 +8,11 @@ Build-Depends:
   libglib2.0-cil-dev,
   libgmime2.4-cil-dev,
   libgtk2.0-dev,
-  libmono-2.0-dev,
   libmono-cil-dev,
   libsqlite3-dev,
   mime-support,
   monodoc-base,
+  mono-devel,
   mono-gmcs,
   shared-mime-info
 Standards-Version: 3.9.2
@@ -22,10 +22,9 @@ Vcs-Browser: https://github.com/baohaojun/beagrep
 
 Package: beagrep
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${cli:Depends}, bash (>= 3.0),
-  libglib2.0-0,
+Depends: 
   libglib2.0-cil,
-  libmono-2.0-1,
+  libmono0,
   libmono-posix2.0-cil,
   libmono-sqlite2.0-cil,
   libsqlite3-0,
