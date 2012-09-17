@@ -177,7 +177,7 @@ dnl ----------------------------------------------
 PKG_CHECK_MODULES(BEAGREPD,
 [
 	shared-mime-info
-	gmime-sharp-2.6 >= $GMIME_SHARP_REQUIRED
+	gmime-sharp-2.4 >= $GMIME_SHARP_REQUIRED
 	glib-sharp-2.0 >= $GTK_SHARP_REQUIRED
 ])
 BEAGREPD_LIBS="$BEAGREPD_LIBS"
