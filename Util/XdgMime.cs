@@ -64,7 +64,12 @@ namespace Beagrep.Util {
 
 		public static string GetMimeType (string file_path)
 		{
+
+#if OS_MACOSX
+			string mime_type = null;
+#else
 			string mime_type = GetMimeTypeFromXattr (file_path);
+#endif
 			if (mime_type != null)
 				return mime_type;
 

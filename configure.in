@@ -24,7 +24,7 @@ GTK_REQUIRED=2.10.0
 ########################################################################
 
 AM_MAINTAINER_MODE
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS(config.h)
 
 AC_PROG_INSTALL
 AM_PROG_LIBTOOL
@@ -96,12 +96,16 @@ case "$target" in
   *-*-freebsd*)
     os=freebsd
     ;;
+  *-*-darwin*)
+    os=macosx
+    ;;
   *)
     AC_MSG_ERROR([Unrecognised target OS: $target])
     ;;
 esac
 AM_CONDITIONAL(OS_LINUX, test "x$os" = "xlinux")
 AM_CONDITIONAL(OS_FREEBSD, test "x$os" = "xfreebsd")
+AM_CONDITIONAL(OS_MACOSX, test "x$os" = "xmacosx")
 
 # xdgmime really wants to have HAVE_MMAP defined
 AC_FUNC_MMAP()
@@ -177,7 +181,6 @@ dnl ----------------------------------------------
 PKG_CHECK_MODULES(BEAGREPD,
 [
 	shared-mime-info
-	gmime-sharp-2.6 >= $GMIME_SHARP_REQUIRED
 	glib-sharp-2.0 >= $GTK_SHARP_REQUIRED
 ])
 BEAGREPD_LIBS="$BEAGREPD_LIBS"

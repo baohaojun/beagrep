@@ -268,7 +268,11 @@ namespace Beagrep.Daemon {
 			}
 		}
 
+#if OS_MACOSX
+		[DllImport("libgobject-2.0.dylib")]
+#else
 		[DllImport("libgobject-2.0.so.0")]
+#endif
 		static extern void g_type_init ();
 
 		public static void DoMain (string[] args)

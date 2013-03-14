@@ -50,6 +50,9 @@ namespace Beagrep.Util {
 
 		private static void CheckLoadAverage ()
 		{
+#if OS_MACOSX
+			return;
+#endif
 			// Only call getloadavg() at most once every 10 seconds
 			if ((DateTime.UtcNow - proc_loadavg_time).TotalSeconds < loadavg_poll_delay)
 				return;

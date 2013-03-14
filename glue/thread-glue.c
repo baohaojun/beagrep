@@ -27,7 +27,6 @@
 
 #include <sys/types.h>
 #include <unistd.h>
-#include <linux/unistd.h>
 #include <errno.h>
 
 #ifdef __NR_gettid

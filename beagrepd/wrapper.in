@@ -18,12 +18,13 @@ if [ -z $installed ] ; then
     fi
 
 else
+    PREFIX_LIB_PATH=$(dirname "@pkglibdir@")
     THIS_PATH="@pkglibdir@"
     THIS_EXE="@pkglibdir@/@target@"
 
-    export MONO_PATH="@pkglibdir@${MONO_PATH+:$MONO_PATH}"
-    export LD_LIBRARY_PATH="@pkglibdir@${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
+    export MONO_PATH="$PREFIX_LIB_PATH:@pkglibdir@${MONO_PATH+:$MONO_PATH}"
+    export LD_LIBRARY_PATH="$PREFIX_LIB_PATH:@pkglibdir@${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
 fi
 
-MONO_PATH="$THIS_PATH${MONO_PATH+:$MONO_PATH}" exec -a @wrapper@ mono $MONO_EXTRA_ARGS $THIS_EXE "$@"
+exec -a @wrapper@ mono $MONO_EXTRA_ARGS $THIS_EXE "$@"
 

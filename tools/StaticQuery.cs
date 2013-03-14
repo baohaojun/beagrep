@@ -223,7 +223,11 @@ public class QueryTool {
 		System.Environment.Exit (0);
 	}
 
+#if OS_MACOSX
+	[DllImport("libgobject-2.0.dylib")]
+#else
 	[DllImport("libgobject-2.0.so.0")]
+#endif
 	static extern void g_type_init ();
 
 	public static void Main (string[] args) 

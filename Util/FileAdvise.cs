@@ -52,6 +52,9 @@ namespace Beagrep.Util {
 
 		static private int GiveAdvice (FileStream file, int advice)
 		{
+#if OS_MACOSX
+			return 0;
+#endif
 			int fd = file.Handle.ToInt32 ();
 			return posix_fadvise (fd, 0, 0, advice);
 		}

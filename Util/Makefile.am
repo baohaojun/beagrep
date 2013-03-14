@@ -16,6 +16,10 @@ if OS_FREEBSD
 CSFLAGS += -define:OS_FREEBSD
 endif
 
+if OS_MACOSX
+CSFLAGS += -define:OS_MACOSX
+endif
+
 EXTSTR = ExternalStringsHack.cs
 EXTSTR_IN = $(srcdir)/$(EXTSTR).in
 $(EXTSTR): $(EXTSTR_IN)

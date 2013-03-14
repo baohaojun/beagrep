@@ -25,6 +25,19 @@ WRAPPER_SED = sed 					\
 	-e "s|\@gacprefix\@|$(GAC_PREFIX)|g"		\
 	-e "s|\@bash\@|$(BASH)|"
 
+CSFLAGS = 
+if OS_LINUX
+CSFLAGS += -define:OS_LINUX
+endif
+
+if OS_FREEBSD
+CSFLAGS += -define:OS_FREEBSD
+endif
+
+if OS_MACOSX
+CSFLAGS += -define:OS_MACOSX
+endif
+
 BREAK_WORDS_TARGET = BreakWords.exe
 BREAK_WORDS_WRAPPER = beagrep-break-words
 BREAK_WORDS_CSFILES = $(foreach cs, BreakWords.cs StandardTokenizerImpl.cs Token.cs, $(srcdir)/$(cs))

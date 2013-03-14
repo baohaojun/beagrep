@@ -82,7 +82,12 @@ namespace Beagrep.Util {
 
 		static public bool SetSchedulerPolicyBatch ()
 		{
+
+#if OS_MACOSX
+			int rc = 0;
+#else
 			int rc = set_scheduler_policy_batch ();
+#endif
 
 			if (rc < 0)
 				Log.Warn ("Unable to set scheduler policy to SCHED_BATCH");
@@ -92,7 +97,11 @@ namespace Beagrep.Util {
 
 		static public bool SetSchedulerPolicyOther ()
 		{
+#if OS_MACOSX
+			int rc = 0;
+#else
 			int rc = set_scheduler_policy_other ();
+#endif
 
 			if (rc < 0)
 				Log.Warn ("Unable to set scheduler policy to SCHED_OTHER");
