@@ -39,150 +39,152 @@ using Beagrep.Util;
 
 namespace Beagrep {
 
-	public abstract class Transport {
+        public abstract class Transport {
 
-		protected static XmlSerializer req_serializer = new XmlSerializer (typeof (RequestWrapper), RequestMessage.Types);
-		protected static XmlSerializer resp_serializer = new XmlSerializer (typeof (ResponseWrapper), ResponseMessage.Types);
+                protected static XmlSerializer req_serializer = new XmlSerializer (typeof (RequestWrapper), RequestMessage.Types);
+                protected static XmlSerializer resp_serializer = new XmlSerializer (typeof (ResponseWrapper), ResponseMessage.Types);
 
-		private bool local = false;
+                private bool local = false;
 
-		private MemoryStream buffer_stream = new MemoryStream ();
-		private bool closed = false;
+                private MemoryStream buffer_stream = new MemoryStream ();
+                private bool closed = false;
 
-		public delegate void AsyncResponseDelegate (ResponseMessage response);
-		public delegate void ClosedDelegate ();
+                public delegate void AsyncResponseDelegate (ResponseMessage response);
+                public delegate void ClosedDelegate ();
 
-		public event AsyncResponseDelegate AsyncResponse;
-		public event ClosedDelegate Closed;
+                public event AsyncResponseDelegate AsyncResponse;
+                public event ClosedDelegate Closed;
 
-		public Transport (bool local)
-		{
-			this.local = local;
-		}
+                public Transport (bool local)
+                {
+                    Console.WriteLine("hello Transport.cs:60");
+                        this.local = local;
+                        Console.WriteLine("hello Transport.cs:62");
+                }
 
-		public Transport ()
-			: this (false)
-		{
-		}
+                public Transport ()
+                        : this (false)
+                {
+                }
 
-		~Transport ()
-		{
-			Close ();
-		}
+                ~Transport ()
+                {
+                        Close ();
+                }
 
-		public abstract void Close ();
-		public abstract ResponseMessage Send (RequestMessage request);
-		public abstract void SendAsyncBlocking (RequestMessage request);
-		protected abstract void SendRequest (RequestMessage request);
-		protected abstract void ReadCallback (IAsyncResult ar);
-		protected abstract void BeginRead ();
-		
-		protected void SendRequest (RequestMessage request, Stream stream)
-		{
-			// The socket may be shut down at some point here.  It
-			// is the caller's responsibility to handle the error
-			// correctly.
+                public abstract void Close ();
+                public abstract ResponseMessage Send (RequestMessage request);
+                public abstract void SendAsyncBlocking (RequestMessage request);
+                protected abstract void SendRequest (RequestMessage request);
+                protected abstract void ReadCallback (IAsyncResult ar);
+                protected abstract void BeginRead ();
+
+                protected void SendRequest (RequestMessage request, Stream stream)
+                {
+                        // The socket may be shut down at some point here.  It
+                        // is the caller's responsibility to handle the error
+                        // correctly.
 #if ENABLE_XML_DUMP
-			MemoryStream mem_stream = new MemoryStream ();
-			XmlFu.SerializeUtf8 (req_serializer, mem_stream, new RequestWrapper (request));
-			mem_stream.Seek (0, SeekOrigin.Begin);
-			StreamReader r = new StreamReader (mem_stream);
-			Logger.Log.Debug ("Sending request:\n{0}\n", r.ReadToEnd ());
-			mem_stream.Seek (0, SeekOrigin.Begin);
-			mem_stream.WriteTo (stream);
-			mem_stream.Close ();
+                        MemoryStream mem_stream = new MemoryStream ();
+                        XmlFu.SerializeUtf8 (req_serializer, mem_stream, new RequestWrapper (request));
+                        mem_stream.Seek (0, SeekOrigin.Begin);
+                        StreamReader r = new StreamReader (mem_stream);
+                        Logger.Log.Debug ("Sending request:\n{0}\n", r.ReadToEnd ());
+                        mem_stream.Seek (0, SeekOrigin.Begin);
+                        mem_stream.WriteTo (stream);
+                        mem_stream.Close ();
 #else
-			XmlFu.SerializeUtf8 (req_serializer, stream, new RequestWrapper (request));
+                        XmlFu.SerializeUtf8 (req_serializer, stream, new RequestWrapper (request));
 #endif
-			// Send end of message marker
-			stream.WriteByte (0xff);
-			stream.Flush ();
-		}
+                        // Send end of message marker
+                        stream.WriteByte (0xff);
+                        stream.Flush ();
+                }
 
-		protected void HandleResponse (Stream deserialize_stream)
-		{
+                protected void HandleResponse (Stream deserialize_stream)
+                {
 #if ENABLE_XML_DUMP
-			StreamReader r = new StreamReader (deserialize_stream);
-			Logger.Log.Debug ("Received response:\n{0}\n", r.ReadToEnd ());
-			deserialize_stream.Seek (0, SeekOrigin.Begin);
+                        StreamReader r = new StreamReader (deserialize_stream);
+                        Logger.Log.Debug ("Received response:\n{0}\n", r.ReadToEnd ());
+                        deserialize_stream.Seek (0, SeekOrigin.Begin);
 #endif
-			ResponseWrapper wrapper = (ResponseWrapper)resp_serializer.Deserialize (deserialize_stream);
-			ResponseMessage response = wrapper.Message;
-			deserialize_stream.Close ();
+                        ResponseWrapper wrapper = (ResponseWrapper)resp_serializer.Deserialize (deserialize_stream);
+                        ResponseMessage response = wrapper.Message;
+                        deserialize_stream.Close ();
 
-			// Run the handler in an idle handler so that events are thrown
-			// in the main thread instead of this inferior helper thread.
-			EventThrowingClosure closure = new EventThrowingClosure (this, response);
-			GLib.Idle.Add (new IdleHandler (closure.ThrowEvent));
-		}
+                        // Run the handler in an idle handler so that events are thrown
+                        // in the main thread instead of this inferior helper thread.
+                        EventThrowingClosure closure = new EventThrowingClosure (this, response);
+                        GLib.Idle.Add (new IdleHandler (closure.ThrowEvent));
+                }
 
-		public void SendAsync (RequestMessage request)
-		{
-			Exception exception = null;
+                public void SendAsync (RequestMessage request)
+                {
+                        Exception exception = null;
 
-			try {
-				SendRequest (request);
-			} catch (IOException e) {
-				exception = e;
-			} catch (SocketException e) {
-				exception = e;
-			}
+                        try {
+                                SendRequest (request);
+                        } catch (IOException e) {
+                                exception = e;
+                        } catch (SocketException e) {
+                                exception = e;
+                        }
 
-			if (exception == null) {
-				BeginRead ();
-				return;
-			}
+                        if (exception == null) {
+                                BeginRead ();
+                                return;
+                        }
 
-			ResponseMessage response = new ErrorResponse (exception);
-			
-			if (AsyncResponse != null)
-				AsyncResponse (response);
-		}
+                        ResponseMessage response = new ErrorResponse (exception);
 
-		protected void InvokeClosedEvent ()
-		{
-			if (Closed != null)
-				Closed ();
-		}
-		
-		protected void InvokeAsyncResponseEvent (ResponseMessage response)
-		{
-			if (AsyncResponse != null)
-				AsyncResponse (response);
-		}
+                        if (AsyncResponse != null)
+                                AsyncResponse (response);
+                }
 
-		private class EventThrowingClosure {
-		
-			private Transport transport = null;
-			private ResponseMessage response = null;
+                protected void InvokeClosedEvent ()
+                {
+                        if (Closed != null)
+                                Closed ();
+                }
 
-			public EventThrowingClosure (Transport transport, ResponseMessage response)
-			{
-				this.transport = transport;
-				this.response = response;
-			}
+                protected void InvokeAsyncResponseEvent (ResponseMessage response)
+                {
+                        if (AsyncResponse != null)
+                                AsyncResponse (response);
+                }
 
-			public bool ThrowEvent ()
-			{
-				if (transport.AsyncResponse != null)
-					transport.AsyncResponse (this.response);
+                private class EventThrowingClosure {
 
-				return false;
-			}
-		}
+                        private Transport transport = null;
+                        private ResponseMessage response = null;
 
-		public bool IsLocal {
-			get { return local; }
-		}
+                        public EventThrowingClosure (Transport transport, ResponseMessage response)
+                        {
+                                this.transport = transport;
+                                this.response = response;
+                        }
 
-		protected MemoryStream BufferStream {
-			get { return buffer_stream; }
-			set { buffer_stream = value; }
-		}
+                        public bool ThrowEvent ()
+                        {
+                                if (transport.AsyncResponse != null)
+                                        transport.AsyncResponse (this.response);
 
-		protected bool IsClosed {
-			get { return closed; }
-			set { closed = value; }
-		}
-	}	
+                                return false;
+                        }
+                }
+
+                public bool IsLocal {
+                        get { return local; }
+                }
+
+                protected MemoryStream BufferStream {
+                        get { return buffer_stream; }
+                        set { buffer_stream = value; }
+                }
+
+                protected bool IsClosed {
+                        get { return closed; }
+                        set { closed = value; }
+                }
+        }
 }
