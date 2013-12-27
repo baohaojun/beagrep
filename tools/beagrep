@@ -7,8 +7,9 @@ use String::ShellQuote;
 my $pat = '';
 my $pathpat = '.';
 my $additional_tokens = '';
+my $use_tokens = '';
 my $pathdeny = '^$';
-chomp(my $pwd =qx/readlink -f `pwd`/);
+chomp(my $pwd = qx/readlink -f "`pwd`"/);
 my $pwd_opt;
 my $list_beagrep;
 my $short_format = 0;
@@ -18,6 +19,7 @@ my $find_file_only = 0;
 my $file_default_line = 1;
 my $file_tag = "";
 my $grep_use_perl_regexp;
+my $replace_with;
 
 open(my $log, ">>", glob("~/.beagrep.log")) or die "Error openning log";
 print $log "$0 @ARGV in " . $ENV{PWD} . "\n";
@@ -33,9 +35,10 @@ sub debug(@) {
 my $grep_add_opts = "";
 GetOptions(
     "a=s" => \$additional_tokens,
+    "t=s" => \$use_tokens,
     "e=s" => \$pat,
     "p=s" => \$pathpat,
-    "perl=s" => \$grep_use_perl_regexp,
+    "perl!" => \$grep_use_perl_regexp,
     "grep=s" => \$grep_add_opts,
     "v=s" => \$pathdeny,
     "d=s" => \$pwd_opt,
@@ -43,7 +46,16 @@ GetOptions(
     "f!" => \$find_file_only,
     "l!" => \$list_beagrep,
     "s!" => \$short_format,
-    );
+    "rewrite=s" => \$replace_with,
+    ) or die;
+
+if ($replace_with) {
+    my $char_1 = substr($replace_with, 0, 1);
+    my @parts = split($char_1, $replace_with);
+    my $re = $parts[1];
+    my $with = $parts[2];
+    $pat =~ s/$re/$with/;
+}
 
 if ($ignore_case) {
   $ignore_case = '-i';
@@ -60,6 +72,9 @@ if ($grep_use_perl_regexp) {
 
 die 'no regexp specified' unless $pat;
 if ($pwd_opt) {
+    if (not -d $pwd_opt) {
+        $pwd_opt = qx(select-beagrep-dir $pwd_opt);
+    }
     $pwd = $pwd_opt;
 }
 chdir $pwd or die "$pwd: $!";
@@ -81,7 +96,7 @@ if ($find_file_only) {
   $pat_implicit_path = $pat;
 }
 
-if ($pat_implicit_path =~ m/\(|\)/) { 
+if ($pat_implicit_path =~ m/\(|\)/) {
     # hack for fixing unexpected error messages when we actually
     # should not do implicit path matching
     $pat_implicit_path = "^it can not be a path pat, do not bother!";
@@ -90,14 +105,26 @@ if ($pat_implicit_path =~ m/\(|\)/) {
 $pat = shell_quote($pat);
 debug "pat is: $pat.\n";
 
-debug "beagrep query argument `[01;31m"
-  . substr(qx/beagrep-get-tokens $pat/, 0, -1) 
-  . "[0m'\n";
+# debug "beagrep query argument `[01;31m"
+#   . substr(qx/beagrep-get-tokens $pat/, 0, -1)
+#   . "[0m'\n";
 
-my $beagrep_files = qx/beagrep-files $pat $additional_tokens/;
+my $beagrep_files = $use_tokens ? qx/beagrep-files $use_tokens/ : qx/beagrep-files $pat $additional_tokens/;
 my @beagrep_files = split(/\n/, $beagrep_files);
 
 if ($short_format) {
+    my $pwd_save = $pwd;
+    my $db_dir = glob("~/.cache/for-code-reading") . "/$pwd";
+    while (! -d "$db_dir/.beagrep") {
+        debug "no beagrep db at $db_dir";
+        $pwd =~ s!(.*)/.*!$1!;
+        if (not $pwd or $pwd eq "/") {
+            die "Can not find beagrep data for $pwd_save";
+        }
+        $db_dir = glob("~/.cache/for-code-reading") . "/$pwd";
+    }
+    chdir $pwd;
+    chomp($pwd = qx/readlink -f "`pwd`"/);
     my $start = length($pwd) + 1;
     map {$_ = substr($_, $start)} @beagrep_files;
     printf "Using short format, Entering directory \`%s'\n", $pwd;
@@ -111,15 +138,20 @@ if ($list_beagrep) {
 }
 
 if (!$find_file_only) {
-  open(my $grep, "|xargs -d '\\n' grep -H -n -I $ignore_case $grep_add_opts $grep_use_perl_regexp -e $pat");
+    if ($ignore_case) {
+        $ENV{'LANG'} = 'C';
+        $ENV{'LC_ALL'} = 'C'; # fix grep too slow when ignore_case
+    }
 
-  for (@beagrep_files) {
-    next unless m/$pathpat/i;
-    next if m/$pathdeny/i;
-    print $grep "$_\n";
-  }
-  close $grep; # perldoc -f close, search for wait, the "xargs grep"
-	       # subprocess is finished when this returns
+    open(my $grep, "|xargs -d '\\n' -- grep -e $pat -H -n -I $ignore_case $grep_add_opts $grep_use_perl_regexp");
+
+    for (@beagrep_files) {
+        next unless m/$pathpat/i;
+        next if m/$pathdeny/i;
+        print $grep "$_\n";
+    }
+    close $grep; # perldoc -f close, search for wait, the "xargs grep"
+                 # subprocess is finished when this returns
 }
 
 #see [[http://baohaojun.wordpress.com/2010/05/06/beagrep-grep-sh%E5%8A%9F%E8%83%BD%E5%8F%88%E5%8F%98%E5%BC%BA%E5%A4%A7%E4%BA%86/]] for why
@@ -133,7 +165,7 @@ if ($find_file_only || 1) {
         my $files = qx(grep-gtags -e $file_tag|perl -ne "if (m/:[0-9]+:/) {s/:[0-9]+:.*//; print}"|sort -u);
         my @files = split("\n", $files);
         for (@files) {
-            print "$_:$file_default_line: [01;31m****************![0m\n" 
+            print "$_:$file_default_line: [01;31m****************![0m\n"
                 if $path_match_set{$_} and m,/$pat_implicit_path$,; # the `and' part is to make file name match totally
         }
     } else {

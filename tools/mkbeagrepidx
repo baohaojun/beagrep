@@ -1,13 +1,16 @@
 #!/bin/bash
 
-# gtags will call sort, which will use a lot of space for large projects.
+# gtags will call sort, which will use a lot of space for large
+# projects.  And if TMPDIR is on /tmp, which is tmpfs using RAM, then
+# sort may fail
 export TMPDIR=~/.cache
 mkdir -p $TMPDIR
+mkdir -p ~/.logs
 
-cd -P . 
+cd -P .
 outDir=~/.cache/for-code-reading/"`pwd`"
 srcDir=`pwd`
-relativeSrcDir=.
+export relativeSrcDir=.
 while test "$outDir" != "" -a ! -d "$outDir"/.beagrep; do
     outDir=${outDir%/*}
 done
@@ -16,12 +19,17 @@ if test "$outDir" = "`readlink -f ~`"; then
     outDir=""
 fi
 
-if test "$outDir" != "" -a "$outDir" != ~/.cache/for-code-reading/"`pwd`";
+if test -r "$outDir" -a "$outDir" != ~/.cache/for-code-reading/"`pwd`";
 then
     higherSrcDir=${outDir#~/.cache/for-code-reading/}
 
-    if tty >/dev/null && test "$IN_EMACS" != true
-    then
+    if type yes-or-no-p >/dev/null 2>&1; then
+        if yes-or-no-p -y "Do you want update code reading for $higherSrcDir?"; then
+            ans=Y
+        else
+            ans=N
+        fi
+    elif tty >/dev/null && test "$IN_EMACS" != true; then
         read -p "Do you want update code reading for $higherSrcDir? (Y/n): " ans
     else
         ans=Y
@@ -30,16 +38,22 @@ then
     if test "$ans" = n -o "$ans" = N; then
         outDir=~/.cache/for-code-reading/"`pwd`"
     else
-        DoUpDir=true
-        relativeSrcDir=${srcDir/#$higherSrcDir/.}
+        export relativeSrcDir=${srcDir/#$higherSrcDir/.}
         cd $higherSrcDir
     fi
-else 
+else
     outDir=~/.cache/for-code-reading/"`pwd`"
 fi
 
 function mkcscope_files() {
-    if tty >/dev/null 2>&1 || test "$RUNNING_IN_CRON" = true || test "$IN_EMACS" = true; then
+    # When in Emacs, we want to be able to use "echo $FILE | mkgtags
+    # -u" to check if $FILE is updated or not, and in that case, we
+    # don't use `find' to find all the files, instead we just `cat'
+    # (the stdin).
+    if tty >/dev/null 2>&1 || test "$RUNNING_IN_CRON" = true || {
+            test -f /dev/stdin &&
+            test $(stat -c %s "$(readlink -f /dev/stdin)") = 0
+        }; then
         find $relativeSrcDir \( '-path' '*/CVS' \
             '-o' '-path' '*/.svn' \
             '-o' '-path' '*/autom4te.cache' \
@@ -61,31 +75,47 @@ function mkcscope_files() {
             '-o' '-iname' '*.elc' \
             '-o' '-path' '*/.ignore' \
             '-o' '-path' '*/.repo' \
-	    '-o' '-iname' '*.ncb' \
+            '-o' '-iname' '*.ncb' \
             '-o' '-iname' "cscope.files" \
             -o -iname "cscope.out" \
             -o -ipath "*/.beagrep" \
-            \) -prune -o -type f -print | 
+            \) -prune -o -type f -print |
             perl -ne 'print unless m,
                 (?:frameworks/base/api/[0-9]+.xml)|
                 (?:frameworks/base/docs/html/sdk/api_diff/.*\.xml)|
                 (?:development/sdk/api-versions.xml),x' |
             tee "$outDir"/cscope.files
     else
+        cat # see comment above
+    fi | if test -e ~/etc/gtags-filter.rc; then
+        bash ~/etc/gtags-filter.rc
+    else
         cat
     fi
 }
 
-function _mk_help_dir() {
-    mkdir -p "$outDir"
-}
-
 function mkgtags() {
-    _mk_help_dir
+    mkdir -p "$outDir"
     if test -e .globalrc; then
-	export GTAGSCONF=$(readlink -f .globalrc)
+        export GTAGSCONF=$(readlink -f .globalrc)
+    fi
+    if test -e "$outDir"/.langmap; then
+        fix-lang-map "$outDir"
+        export GTAGSCONF=$(readlink -f "$outDir"/.globalrc)
+    fi
+    if test -e "$outDir"/GTAGS && test "$(stat -c %s "$outDir"/GTAGS)" = 0; then
+        (
+            cd "$outDir"
+            rm GPATH GRTAGS GTAGS GTAGS.dump -f
+        )
     fi
     mkcscope_files | gtags --gtagslabel=plugin-example -f - "$@" "$outDir"
+
+    (
+        flock 9
+        GTAGSROOT=$PWD GTAGSDBPATH=$outDir global -x '.*' | awk '{print $1" "$4}' | sort -u > "$outDir"/GTAGS.dump
+    ) 9<"$outDir"/GTAGS &
+
 }
 
 function mkgtags-filter() {
@@ -94,12 +124,12 @@ function mkgtags-filter() {
 
 function wlp() {
     case $(uname) in
-	CYGWIN*)
-	    cygpath -alm "$1"
-	    ;;
-	*)
-	    readlink -m "$1"
-	    ;;
+        CYGWIN*)
+            cygpath -alm "$1"
+            ;;
+        *)
+            readlink -m "$1"
+            ;;
     esac
 }
 
@@ -119,6 +149,8 @@ function mkbeagrepidx() {
         ADDITIONAL_OPTIONS=("$@")
     elif test "$BEAGREP_IGNORE_DIR_PATTERNS"; then
         ADDITIONAL_OPTIONS=(--deny-directory-pattern "$BEAGREP_IGNORE_DIR_PATTERNS")
+    elif test -e "$(lookup-file .beagrep-ignore 2>/dev/null)"; then
+        ADDITIONAL_OPTIONS=(--deny-directory-pattern "*/.git,$(cat $(lookup-file .beagrep-ignore))")
     else
         ADDITIONAL_OPTIONS=(--deny-directory-pattern "$PWD/out,*/.repo,*/.git")
     fi

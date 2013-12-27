@@ -1,27 +1,37 @@
 #!/bin/bash
+
+set -e
+function die() {
+    echo Error: "$@"
+    exit -1
+}
+
 start_dir=~/.cache/for-code-reading/"$(readlink -f "$PWD")"
 # echo Starting at $start_dir 1>&2
-while test ! -d "$start_dir"/.beagrep -a "$start_dir" != /
+while test ! -d "$start_dir"/.beagrep -a "$start_dir" != / -a "$start_dir"
 do
     start_dir=${start_dir%/*}
 done
 
-if test "$start_dir" = / -o "$start_dir" = $HOME
+if test "$start_dir" = / -o "$start_dir" = $HOME -o -z "$start_dir"
 then
     start_dir=`readlink -f ~/.gtags-dir`
 fi
 
+if test ! -d "$start_dir"; then
+    die "Can not find beagrep database"
+fi
 beagrep_dir=$start_dir/.beagrep
 echo Beagrep index found at "$beagrep_dir" 1>&2
 
 function wlp() {
     case $(uname) in
-	CYGWIN*)
-	    cygpath -alm "$1"
-	    ;;
-	*)
-	    readlink -m "$1"
-	    ;;
+        CYGWIN*)
+            cygpath -alm "$1"
+            ;;
+        *)
+            readlink -m "$1"
+            ;;
     esac
 }
 
@@ -37,11 +47,12 @@ if test "$FIND_FILE_ONLY"; then
 fi
 
 tokens="$tokens $additional_tokens"
-for x in "$beagrep_dir" `cat $beagrep_dir/../.beagrep-brothers 2>/dev/null`
-do 
+for x in "$beagrep_dir" $(cat "$beagrep_dir"/../.beagrep-brothers 2>/dev/null)
+do
     beagrep-static-query \
         --add-static-backend "$(wlp "$x")" \
-        --backend none --max-hits 100000 "$tokens" | \
-        beagrep-unurl.pl|grep -v '#'|sort -u
+        --backend none --max-hits 100000 "$tokens" |
+    beagrep-unurl-and-filter.pl|grep -v '#' |
+    sort -u
 done
 echo /dev/null
