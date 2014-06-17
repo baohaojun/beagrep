@@ -1,44 +1,65 @@
 #!/bin/bash
-start_dir=~/tmp/for-code-reading/`pwd`
+
+set -e
+function die() {
+    echo Error: "$@"
+    exit -1
+}
+
+start_dir=~/.cache/for-code-reading/"$(readlink -f "$PWD")"
 # echo Starting at $start_dir 1>&2
-while test ! -d "$start_dir"/.beagrep -a "$start_dir" != /
+while test ! -d "$start_dir"/.beagrep -a "$start_dir" != / -a "$start_dir"
 do
     start_dir=${start_dir%/*}
 done
 
-if test "$start_dir" = / -o "$start_dir" = $HOME
+if test "$start_dir" = / -o "$start_dir" = $HOME -o -z "$start_dir"
 then
     start_dir=`readlink -f ~/.gtags-dir`
 fi
 
+if test ! -d "$start_dir"; then
+    die "Can not find beagrep database"
+fi
 beagrep_dir=$start_dir/.beagrep
 # echo Beagrep index found at "$beagrep_dir" 1>&2
 
-if test -f "$start_dir"/.beagrep-filter
-then
-    beagrep_filter="$start_dir"/.beagrep-filter
-else
-    echo 'Warning: you have no .beagrep-filter at $start_dir! You will probablly see lots of noise' 1>&2
-    beagrep_filter=cat
-fi
-
 function wlp() {
     case $(uname) in
-	CYGWIN*)
-	    cygpath -alm "$1"
-	    ;;
-	*)
-	    readlink -m "$1"
-	    ;;
+        CYGWIN*)
+            cygpath -alm "$1"
+            ;;
+        *)
+            readlink -m "$1"
+            ;;
     esac
 }
 
-tokens=`beagrep-get-tokens "$@"`
-for x in "$beagrep_dir" `cat $beagrep_dir/../.beagrep-brothers 2>/dev/null`
-do 
+tokens_str=$1
+shift
+additional_tokens=$(echo "$@")
+
+tokens=`beagrep-get-tokens "$tokens_str"`
+if test ${0##*/} = beagrep-glob-files; then
+    tokens=$(echo -n "$tokens" | perl -npe 's/(\S{2,})/filename:*$1*/g')
+fi
+
+if test "$FIND_FILE_ONLY"; then
+    tokens=$(echo -n " $tokens" | perl -npe 's/\s+/ filename:/g; s/(^ *| filename:$)//g')
+    mkdir -p ~/.logs
+    echo $tokens > ~/.logs/$(basename $0).log
+fi
+
+tokens="$tokens $additional_tokens"
+for x in "$beagrep_dir" $(cat "$beagrep_dir"/../.beagrep-brothers 2>/dev/null)
+do
     beagrep-static-query \
         --add-static-backend "$(wlp "$x")" \
-        --backend none --max-hits 100000 "$tokens" | \
-        beagrep-unurl.pl|grep -v '#'|sort -u|"$beagrep_filter"
+        --backend none --max-hits 100000 "$tokens" |
+    beagrep-unurl-and-filter.pl|grep -v '#' |
+    sort -u
 done
-echo /dev/null
+
+if test ${0##*/} != beagrep-glob-files; then
+    echo /dev/null
+fi

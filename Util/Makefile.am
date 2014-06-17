@@ -83,7 +83,7 @@ CSFLAGS += -define:DOTNET2
 
 UTIL_ASSEMBLIES =				\
 	$(BEAGREPD_LIBS)				\
-	$(NDESK_DBUS_GLIB_LIBS)			\
+        -r:System.Data                                  \
 	-r:Mono.Data.Sqlite			\
 	-r:Mono.Posix				\
 	-r:ICSharpCode.SharpZipLib
@@ -129,7 +129,7 @@ uninstall-local:
 	rm -f $(DESTDIR)$(pkglibdir)/$(UI_UTIL_TARGET) $(DESTDIR)$(pkglibdir)/$(UI_UTIL_TARGET).mdb $(DESTDIR)$(pkglibdir)/$(UI_UTIL_TARGET_CONFIG)
 
 
-COND_CS_FILES =	
+COND_CS_FILES =
 
 EXTRA_DIST =					\
 	$(EXTSTR_IN)				\
@@ -144,4 +144,3 @@ CLEANFILES =			\
 	$(UTIL_TARGET).mdb	\
 	Inotify.exe		\
 	Inotify.exe.mdb
-

@@ -1,9 +1,9 @@
-INCLUDES = $(MONO_CFLAGS)
+INCLUDES = @MONO_CFLAGS@ @GLIB_CFLAGS@
 
 EXTRA_GLUE_SOURCES =
 EXTRA_GLUE_LIBADD =
 
-BEAGREPD_GLUE_SOURCES = 
+BEAGREPD_GLUE_SOURCES =
 
 if ENABLE_INOTIFY
 EXTRA_GLUE_SOURCES +=		\
@@ -33,7 +33,7 @@ libbeagrepglue_la_LDFLAGS     = -no-undefined -version-info 0:0:0
 libbeagrepglue_la_LIBADD =	\
 	-L/c/PROGRA~1/MONO-2~1.6/bin -lglib-2.0-0 \
 	$(SYSINFO_GLUE_LIBADD)	\
-	$(EXTRA_GLUE_LIBADD) 
+	$(EXTRA_GLUE_LIBADD)
 
 gluelibdir = $(pkglibdir)
 gluelib_LTLIBRARIES = 		\
@@ -45,5 +45,3 @@ COND_SOURCES = 			\
 
 EXTRA_DIST =			\
 	$(COND_SOURCES)
-
-

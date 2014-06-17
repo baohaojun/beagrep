@@ -1,4 +1,3 @@
-../../bin/linux/beagrep-dump
 BeagrepClient/Beagrep.dll
 BeagrepClient/Beagrep.dll.mdb
 BeagrepClient/Makefile
@@ -73,8 +72,6 @@ glue/inotify-glue.o
 glue/ioprio-glue.lo
 glue/ioprio-glue.o
 glue/libbeagrepglue.la
-glue/mono-glue.lo
-glue/mono-glue.o
 glue/scheduler-glue.lo
 glue/scheduler-glue.o
 glue/screensaver-glue.lo
@@ -135,4 +132,4 @@ tools/beagrep-static-query
 *.exe
 *.exe.mdb
 tools/beagrep-break-words
-
+compile

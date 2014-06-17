@@ -125,12 +125,15 @@ namespace Beagrep.Util {
 		/// <returns>
 		/// A <see cref="System.Boolean"/>
 		/// </returns>
+<<<<<<< HEAD
 		public static bool XssInit ()
 		{
 			int has_xss = 0;
 			use_screensaver = (has_xss == 1);
 			return use_screensaver;
 		}
+=======
+>>>>>>> origin/master
 
 
 		private static void CheckScreenSaver ()
@@ -180,30 +183,6 @@ namespace Beagrep.Util {
 		// class that uses them.  That's why we have this retarded extra
 		// class and initializer function.  Paolo says this is a *HUGE*
 		// unsupported hack and not to be surprised if it doesn't work.
-
-		[MethodImplAttribute (MethodImplOptions.InternalCall)]
-		public extern static int GetObjectSizeIcall (object o);
-
-		public static int GetObjectSize (object o)
-		{
-			try {
-				return GetObjectSizeIcall (o);
-			} catch (MissingMethodException) {
-				return -1;
-			}
-		}
-
-		[MethodImplAttribute (MethodImplOptions.InternalCall)]
-		public extern static int GetObjectPointerIcall (object o);
-
-		public static long GetObjectPointer (object o)
-		{
-			try {
-				return GetObjectPointerIcall (o);
-			} catch (MissingMethodException) {
-				return -1;
-			}
-		}
 
 		///////////////////////////////////////////////////////////////
 
