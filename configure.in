@@ -167,6 +167,7 @@ AM_CONDITIONAL(ENABLE_INOTIFY, test "x$enable_inotify" = "xyes")
 dnl ----------------------------------------------
 
 dnl gsf-sharp
+PKG_CHECK_MODULES([GLIB], glib-2.0 >= 2.2.0)
 
 
 dnl ----------------------------------------------
@@ -186,26 +187,6 @@ dnl ----------------------------------------------
 GTK_BINARY_VERSION=`$PKG_CONFIG --variable=gtk_binary_version gtk+-2.0`
 AC_SUBST(GTK_BINARY_VERSION)
 
-<<<<<<< HEAD
-dnl For the systeminfo glue
-
-SYSTEMINFO_GLUE_X_LIBS=""
-AC_SUBST(SYSTEMINFO_GLUE_X_LIBS)
-
-dnl ----------------------------------------------
-
-dnl KDE launcher/icon support
-
-kde_prefix_print="unknown; will guess at runtime"
-AC_PATH_PROG(KDE_CONFIG, [kde-config], [no])
-if test ! "x$KDE_CONFIG" = "xno"; then
-        KDE_PREFIX=`$KDE_CONFIG --prefix`
-        kde_prefix_print="$KDE_PREFIX"
-fi
-AC_SUBST(KDE_PREFIX)
-
-=======
->>>>>>> origin/master
 dnl ----------------------------------------------
 
 dnl Prefixes for helper scripts
