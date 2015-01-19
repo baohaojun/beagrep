@@ -572,8 +572,6 @@ namespace Beagrep.Daemon
                                 // because we need the loop to clean up after GMime.  Without
                                 // it, GMime's streams are never completely unref'd, the
                                 // file descriptors aren't closed, and we run out and crash.
-                                while (GLib.MainContext.Pending ())
-                                        GLib.MainContext.Iteration ();
 
                         } while (reschedule);
                 }

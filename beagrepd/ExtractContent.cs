@@ -44,372 +44,370 @@ using Lucene.Net.Analysis.Standard;
 
 class ExtractContentTool {
 
-	static bool tokenize = false;
-	static bool analyze = false;
-	static bool show_generated = false;
-	static string mime_type = null;
-	static bool continue_last = false;
-	static bool stats_only = false;
+        static bool tokenize = false;
+        static bool analyze = false;
+        static bool show_generated = false;
+        static string mime_type = null;
+        static bool continue_last = false;
+        static bool stats_only = false;
 
-	// FIXME: We don't display structural breaks
-	static void DisplayContent (string line)
-	{
-		line = line.Trim ();
-		if (line.Length == 0)
-			return;
+        // FIXME: We don't display structural breaks
+        static void DisplayContent (string line)
+        {
+                line = line.Trim ();
+                if (line.Length == 0)
+                        return;
 
-		if (tokenize) {
-			
-			string [] parts = line.Split (' ');
-			for (int i = 0; i < parts.Length; ++i) {
-				string part = parts [i].Trim ();
-				if (part != "")
-					Console.WriteLine ("{0}", part);
-			}
+                if (tokenize) {
 
-		} else {
-			Console.WriteLine (line);
-		}
-	}
+                        string [] parts = line.Split (' ');
+                        for (int i = 0; i < parts.Length; ++i) {
+                                string part = parts [i].Trim ();
+                                if (part != "")
+                                        Console.WriteLine ("{0}", part);
+                        }
 
-	static void DisplayContent (char[] buffer, int length)
-	{
-		if (tokenize) {
-			if (continue_last && buffer [0] == ' ')
-				Console.WriteLine ();
+                } else {
+                        Console.WriteLine (line);
+                }
+        }
 
-			char last_char = buffer [length - 1];
-			continue_last = (last_char != '\n' &&
-					      last_char != '\t' &&
-					      last_char != ' ');
+        static void DisplayContent (char[] buffer, int length)
+        {
+                if (tokenize) {
+                        if (continue_last && buffer [0] == ' ')
+                                Console.WriteLine ();
 
-			string line = new string (buffer, 0, length);
-			string [] parts = line.Split (' ');
-			for (int i = 0; i < parts.Length - 1; ++i) {
-				string part = parts [i].Trim ();
-				if (part != String.Empty)
-					Console.WriteLine ("{0}", part);
-			}
+                        char last_char = buffer [length - 1];
+                        continue_last = (last_char != '\n' &&
+                                              last_char != '\t' &&
+                                              last_char != ' ');
 
-			string last = parts [parts.Length - 1];
-			last = last.Trim ();
-			if (last != String.Empty)
-				Console.Write ("{0}{1}", last, (continue_last ? "" : "\n"));
+                        string line = new string (buffer, 0, length);
+                        string [] parts = line.Split (' ');
+                        for (int i = 0; i < parts.Length - 1; ++i) {
+                                string part = parts [i].Trim ();
+                                if (part != String.Empty)
+                                        Console.WriteLine ("{0}", part);
+                        }
 
-		} else {
-			Console.Write (buffer, 0, length);
-		}
-	}
+                        string last = parts [parts.Length - 1];
+                        last = last.Trim ();
+                        if (last != String.Empty)
+                                Console.Write ("{0}{1}", last, (continue_last ? "" : "\n"));
 
-	static bool first_indexable = true;
+                } else {
+                        Console.Write (buffer, 0, length);
+                }
+        }
 
-	static void Display (Indexable indexable)
-	{
-		if (!first_indexable) {
-			Console.WriteLine ();
-			Console.WriteLine ("-----------------------------------------");
-			Console.WriteLine ();
-		}
-		first_indexable = false;
+        static bool first_indexable = true;
 
-		Console.WriteLine ("Filename: " + indexable.Uri);
+        static void Display (Indexable indexable)
+        {
+                if (!first_indexable) {
+                        Console.WriteLine ();
+                        Console.WriteLine ("-----------------------------------------");
+                        Console.WriteLine ();
+                }
+                first_indexable = false;
 
-		if (indexable.ParentUri != null)
-			Console.WriteLine ("Parent: " + indexable.ParentUri);
+                Console.WriteLine ("Filename: " + indexable.Uri);
 
-		Stopwatch watch = new Stopwatch ();
+                if (indexable.ParentUri != null)
+                        Console.WriteLine ("Parent: " + indexable.ParentUri);
 
-		Filter filter;
+                Stopwatch watch = new Stopwatch ();
 
-		watch.Start ();
-		if (! FilterFactory.FilterIndexable (indexable, out filter)) {
-			indexable.Cleanup ();
-			indexable.NoContent = true;
-			filter = null;
-		}
-		watch.Stop ();
+                Filter filter;
 
-		Console.WriteLine ("Filter: {0} (determined in {1})", filter, watch);
-		Console.WriteLine ("MimeType: {0}", indexable.MimeType);
-		Console.WriteLine ();
+                watch.Start ();
+                if (! FilterFactory.FilterIndexable (indexable, out filter)) {
+                        indexable.Cleanup ();
+                        indexable.NoContent = true;
+                        filter = null;
+                }
+                watch.Stop ();
 
-		ArrayList generated_indexables = new ArrayList ();
-		Indexable generated_indexable;
+                Console.WriteLine ("Filter: {0} (determined in {1})", filter, watch);
+                Console.WriteLine ("MimeType: {0}", indexable.MimeType);
+                Console.WriteLine ();
 
-		bool first = true;
-		if (filter != null && filter.HasGeneratedIndexable) {
-			while (filter.GenerateNextIndexable (out generated_indexable)) {
-				if (generated_indexable == null)
-					continue;
+                ArrayList generated_indexables = new ArrayList ();
+                Indexable generated_indexable;
 
-				if (first) {
-					Console.WriteLine ("Filter-generated indexables:");
-					first = false;
-				}
-				
-				Console.WriteLine ("  {0}", generated_indexable.Uri);
+                bool first = true;
+                if (filter != null && filter.HasGeneratedIndexable) {
+                        while (filter.GenerateNextIndexable (out generated_indexable)) {
+                                if (generated_indexable == null)
+                                        continue;
 
-				if (show_generated)
-					generated_indexables.Add (generated_indexable);
-				else
-					generated_indexable.Cleanup ();
-			}
-		}
+                                if (first) {
+                                        Console.WriteLine ("Filter-generated indexables:");
+                                        first = false;
+                                }
 
-		if (! first)
-			Console.WriteLine ();
+                                Console.WriteLine ("  {0}", generated_indexable.Uri);
 
-		// Make sure that the properties are sorted.
-		ArrayList prop_array = new ArrayList (indexable.Properties);
-		prop_array.Sort ();
+                                if (show_generated)
+                                        generated_indexables.Add (generated_indexable);
+                                else
+                                        generated_indexable.Cleanup ();
+                        }
+                }
 
-		Console.WriteLine ("Properties:");
+                if (! first)
+                        Console.WriteLine ();
 
-		if (indexable.ValidTimestamp)
-			Console.WriteLine ("  Timestamp = {0}", DateTimeUtil.ToString (indexable.Timestamp));
+                // Make sure that the properties are sorted.
+                ArrayList prop_array = new ArrayList (indexable.Properties);
+                prop_array.Sort ();
 
-		foreach (Beagrep.Property prop in prop_array) {
-			if (String.IsNullOrEmpty (prop.Value))
-				continue;
+                Console.WriteLine ("Properties:");
 
-			Console.WriteLine ("  {0} = {1}", prop.Key, prop.Value);
-		}
+                if (indexable.ValidTimestamp)
+                        Console.WriteLine ("  Timestamp = {0}", DateTimeUtil.ToString (indexable.Timestamp));
 
-		Console.WriteLine ();
+                foreach (Beagrep.Property prop in prop_array) {
+                        if (String.IsNullOrEmpty (prop.Value))
+                                continue;
 
-		if (indexable.NoContent)
-			return;
+                        Console.WriteLine ("  {0} = {1}", prop.Key, prop.Value);
+                }
 
-		watch.Reset ();
-		watch.Start ();
+                Console.WriteLine ();
 
-		TextReader reader;
-		Analyzer indexing_analyzer = new BeagrepAnalyzer ();
+                if (indexable.NoContent)
+                        return;
 
-		char[] buffer = new char [2048];
-		reader = indexable.GetTextReader ();
-		char separater_char = (tokenize ? '\n' : ' ');
-		if (reader != null) {
-			first = true;
+                watch.Reset ();
+                watch.Start ();
 
-			if (analyze) {
-				if (! stats_only)
-					Console.WriteLine ("Content:");
+                TextReader reader;
+                Analyzer indexing_analyzer = new BeagrepAnalyzer ();
 
-				TokenStream token_stream = indexing_analyzer.TokenStream ("Text", reader);
-				Lucene.Net.Analysis.Token token = token_stream.Next ();
-				first = (token == null);
+                char[] buffer = new char [2048];
+                reader = indexable.GetTextReader ();
+                char separater_char = (tokenize ? '\n' : ' ');
+                if (reader != null) {
+                        first = true;
 
-				if (! stats_only)
-					for (; token != null; token = token_stream.Next ())
-						Console.Write ("{0}{1}", token.TermText (), separater_char);
+                        if (analyze) {
+                                if (! stats_only)
+                                        Console.WriteLine ("Content:");
 
-				token_stream.Close ();
-			} else {
+                                TokenStream token_stream = indexing_analyzer.TokenStream ("Text", reader);
+                                Lucene.Net.Analysis.Token token = token_stream.Next ();
+                                first = (token == null);
+
+                                if (! stats_only)
+                                        for (; token != null; token = token_stream.Next ())
+                                                Console.Write ("{0}{1}", token.TermText (), separater_char);
+
+                                token_stream.Close ();
+                        } else {
 #if false
-				while (true) {
-					int l = reader.Read (buffer, 0, 2048);
-					if (l <= 0)
-						break;
-					if (first)
-						first = false;
-					if (! stats_only)
-						DisplayContent (buffer, l);
-				}
+                                while (true) {
+                                        int l = reader.Read (buffer, 0, 2048);
+                                        if (l <= 0)
+                                                break;
+                                        if (first)
+                                                first = false;
+                                        if (! stats_only)
+                                                DisplayContent (buffer, l);
+                                }
 #else
-				string line;
-				first = true;
-				while ((line = reader.ReadLine ()) != null) {
-					if (first) {
-						Console.WriteLine ("Content:");
-						first = false;
-					}
-					if (! stats_only)
-						DisplayContent (line);
-				}
+                                string line;
+                                first = true;
+                                while ((line = reader.ReadLine ()) != null) {
+                                        if (first) {
+                                                Console.WriteLine ("Content:");
+                                                first = false;
+                                        }
+                                        if (! stats_only)
+                                                DisplayContent (line);
+                                }
 #endif
-			}
+                        }
 
-			reader.Close ();
+                        reader.Close ();
 
-			if (first)
-				Console.WriteLine ("(no content)");
-			else
-				Console.WriteLine ('\n');
-		}
-			
-		/*
-		reader = indexable.GetHotTextReader ();
-		first = true;
-		if (reader != null) {
-			Console.WriteLine ("HotContent:");
+                        if (first)
+                                Console.WriteLine ("(no content)");
+                        else
+                                Console.WriteLine ('\n');
+                }
 
-			if (analyze) {
-				TokenStream token_stream = indexing_analyzer.TokenStream ("HotText", reader);
-				Lucene.Net.Analysis.Token token = token_stream.Next ();
-				first = (token == null);
+                /*
+                reader = indexable.GetHotTextReader ();
+                first = true;
+                if (reader != null) {
+                        Console.WriteLine ("HotContent:");
 
-				for (; token != null; token = token_stream.Next ())
-					Console.Write ("{0}{1}", token.TermText (), separater_char);
+                        if (analyze) {
+                                TokenStream token_stream = indexing_analyzer.TokenStream ("HotText", reader);
+                                Lucene.Net.Analysis.Token token = token_stream.Next ();
+                                first = (token == null);
 
-				token_stream.Close ();
-			} else {
-				while (true) {
-					int l = reader.Read (buffer, 0, 2048);
-					if (l <= 0)
-						break;
-					if (first)
-						first = false;
-					DisplayContent (buffer, l);
-				}
-			}
+                                for (; token != null; token = token_stream.Next ())
+                                        Console.Write ("{0}{1}", token.TermText (), separater_char);
 
-			reader.Close ();
+                                token_stream.Close ();
+                        } else {
+                                while (true) {
+                                        int l = reader.Read (buffer, 0, 2048);
+                                        if (l <= 0)
+                                                break;
+                                        if (first)
+                                                first = false;
+                                        DisplayContent (buffer, l);
+                                }
+                        }
 
-			if (first)
-				Console.WriteLine ("(no hot content)");
-			else
-				Console.WriteLine ('\n');
-		}
-		*/
+                        reader.Close ();
 
-		watch.Stop ();
+                        if (first)
+                                Console.WriteLine ("(no hot content)");
+                        else
+                                Console.WriteLine ('\n');
+                }
+                */
 
-		Console.WriteLine ();
-		Console.WriteLine ("Text extracted in {0}", watch);
+                watch.Stop ();
+
+                Console.WriteLine ();
+                Console.WriteLine ("Text extracted in {0}", watch);
 
 
-		foreach (Indexable gi in generated_indexables)
-			Display (gi);
+                foreach (Indexable gi in generated_indexables)
+                        Display (gi);
 
-		Stream stream = indexable.GetBinaryStream ();
-		if (stream != null)
-			stream.Close ();
+                Stream stream = indexable.GetBinaryStream ();
+                if (stream != null)
+                        stream.Close ();
 
-		// Clean up any temporary files associated with filtering this indexable.
-		indexable.Cleanup ();
-	}
+                // Clean up any temporary files associated with filtering this indexable.
+                indexable.Cleanup ();
+        }
 
-	static void PrintUsage ()
-	{
-		VersionFu.PrintHeader ();
+        static void PrintUsage ()
+        {
+                VersionFu.PrintHeader ();
 
-		Console.WriteLine ("Usage: beagrep-extract-content [OPTIONS] file [file ...]");
-		Console.WriteLine ();
-		Console.WriteLine ("Options:");
-		Console.WriteLine ("  --debug\t\t\tPrint debug info to the console");
-		Console.WriteLine ("  --tokenize\t\t\tTokenize the text before printing");
-		Console.WriteLine ("  --analyze\t\t\tAnalyze the text before printing.\n\t\t\t\tThis will output exactly the words, separated by whitespace, that go into beagrep index.");
-		Console.WriteLine ("  --show-generated\t\tShow filtering information for items created by filters");
-		Console.WriteLine ("  --mimetype=<mime_type>\tUse filter for mime_type");
-		Console.WriteLine ("  --outfile=<filename>\t\tOutput file name");
-		Console.WriteLine ("  --help\t\t\tShow this message");
-		Console.WriteLine ("  --version\t\t\tPrint version information");
-		Console.WriteLine ();
-	}
+                Console.WriteLine ("Usage: beagrep-extract-content [OPTIONS] file [file ...]");
+                Console.WriteLine ();
+                Console.WriteLine ("Options:");
+                Console.WriteLine ("  --debug\t\t\tPrint debug info to the console");
+                Console.WriteLine ("  --tokenize\t\t\tTokenize the text before printing");
+                Console.WriteLine ("  --analyze\t\t\tAnalyze the text before printing.\n\t\t\t\tThis will output exactly the words, separated by whitespace, that go into beagrep index.");
+                Console.WriteLine ("  --show-generated\t\tShow filtering information for items created by filters");
+                Console.WriteLine ("  --mimetype=<mime_type>\tUse filter for mime_type");
+                Console.WriteLine ("  --outfile=<filename>\t\tOutput file name");
+                Console.WriteLine ("  --help\t\t\tShow this message");
+                Console.WriteLine ("  --version\t\t\tPrint version information");
+                Console.WriteLine ();
+        }
 
-	static int Main (string[] args)
-	{
-		SystemInformation.SetProcessName ("beagrep-extract-content");
+        static int Main (string[] args)
+        {
+                SystemInformation.SetProcessName ("beagrep-extract-content");
 
-		if (args.Length < 1 || Array.IndexOf (args, "--help") != -1) {
-			PrintUsage ();
-			return 0;
-		}
+                if (args.Length < 1 || Array.IndexOf (args, "--help") != -1) {
+                        PrintUsage ();
+                        return 0;
+                }
 
-		if (Array.IndexOf (args, "--debug") == -1)
-			Log.Disable ();
+                if (Array.IndexOf (args, "--debug") == -1)
+                        Log.Disable ();
 
-		if (Array.IndexOf (args, "--version") != -1) {
-			VersionFu.PrintVersion ();
-			return 0;
-		}
+                if (Array.IndexOf (args, "--version") != -1) {
+                        VersionFu.PrintVersion ();
+                        return 0;
+                }
 
-		if (Array.IndexOf (args, "--tokenize") != -1)
-			tokenize = true;
-		
-		if (Array.IndexOf (args, "--analyze") != -1)
-			analyze = true;
-		
-		if (Array.IndexOf (args, "--show-generated") != -1 || Array.IndexOf (args, "--show-children") != -1)
-			show_generated = true;
+                if (Array.IndexOf (args, "--tokenize") != -1)
+                        tokenize = true;
 
-		StreamWriter writer = null;
-		string outfile = null;
-		foreach (string arg in args) {
+                if (Array.IndexOf (args, "--analyze") != -1)
+                        analyze = true;
 
-			// mime-type option
-			if (arg.StartsWith ("--mimetype=")) {
-				mime_type = arg.Substring (11);    
-				continue;
-			// output file option
-			// we need this in case the output contains different encoding
-			// printing to Console might not always display properly
-			} else if (arg.StartsWith ("--outfile=")) {
-				outfile = arg.Substring (10);    
-				Console.WriteLine ("Redirecting output to " + outfile);
-				FileStream f = new FileStream (outfile, FileMode.Create);
-				writer = new StreamWriter (f, System.Text.Encoding.UTF8);
-				continue;
-			} else if (arg.StartsWith ("--")) // option, skip it 
-				continue;
-			
-			Uri uri = UriFu.PathToFileUri (arg);
-			Indexable indexable = new Indexable (uri);
-			if (mime_type != null)
-				indexable.MimeType = mime_type;
+                if (Array.IndexOf (args, "--show-generated") != -1 || Array.IndexOf (args, "--show-children") != -1)
+                        show_generated = true;
 
-			try {
-				if (writer != null) {
-					Console.SetOut (writer);
-				}
+                StreamWriter writer = null;
+                string outfile = null;
+                foreach (string arg in args) {
 
-				Display (indexable);
-				if (writer != null) {
-					writer.Flush ();
-				}
-				
-				if (outfile != null) {
-					StreamWriter standardOutput = new StreamWriter(Console.OpenStandardOutput());
-					standardOutput.AutoFlush = true;
-					Console.SetOut(standardOutput);
-				}
-				
-			} catch (Exception e) {
-				Console.WriteLine ("Unable to filter {0}: {1}", uri, e.Message);
-				return -1;
-			}
-			
-			// Super Lame Hack: gtk-sharp up to 2.10 requires a main loop
-			// to dispose of any managed wrappers around GObjects.  Since
-			// we don't have one, we'll process all the pending items in
-			// a loop here.  This is particularly an issue with maildirs,
-			// because we need the loop to clean up after GMime.  Without
-			// it, GMime's streams are never completely unref'd, the
-			// file descriptors aren't closed, and we run out and crash.
-			while (GLib.MainContext.Pending ())
-				GLib.MainContext.Iteration ();
-		}
-		if (writer != null)
-			writer.Close ();
+                        // mime-type option
+                        if (arg.StartsWith ("--mimetype=")) {
+                                mime_type = arg.Substring (11);
+                                continue;
+                        // output file option
+                        // we need this in case the output contains different encoding
+                        // printing to Console might not always display properly
+                        } else if (arg.StartsWith ("--outfile=")) {
+                                outfile = arg.Substring (10);
+                                Console.WriteLine ("Redirecting output to " + outfile);
+                                FileStream f = new FileStream (outfile, FileMode.Create);
+                                writer = new StreamWriter (f, System.Text.Encoding.UTF8);
+                                continue;
+                        } else if (arg.StartsWith ("--")) // option, skip it
+                                continue;
 
-		return 0;
-	}
+                        Uri uri = UriFu.PathToFileUri (arg);
+                        Indexable indexable = new Indexable (uri);
+                        if (mime_type != null)
+                                indexable.MimeType = mime_type;
 
-	// A stripped version of LuceneCommon.BeagrepAnalyzer
-	internal class BeagrepAnalyzer : StandardAnalyzer {
+                        try {
+                                if (writer != null) {
+                                        Console.SetOut (writer);
+                                }
 
-		public BeagrepAnalyzer ()
-		{
-		}
+                                Display (indexable);
+                                if (writer != null) {
+                                        writer.Flush ();
+                                }
 
-		public override TokenStream TokenStream (string fieldName, TextReader reader)
-		{
-			TokenStream outstream;
-			outstream = base.TokenStream (fieldName, reader);
+                                if (outfile != null) {
+                                        StreamWriter standardOutput = new StreamWriter(Console.OpenStandardOutput());
+                                        standardOutput.AutoFlush = true;
+                                        Console.SetOut(standardOutput);
+                                }
 
-			return outstream;
-		}
-	}
+                        } catch (Exception e) {
+                                Console.WriteLine ("Unable to filter {0}: {1}", uri, e.Message);
+                                return -1;
+                        }
+
+                        // Super Lame Hack: gtk-sharp up to 2.10 requires a main loop
+                        // to dispose of any managed wrappers around GObjects.  Since
+                        // we don't have one, we'll process all the pending items in
+                        // a loop here.  This is particularly an issue with maildirs,
+                        // because we need the loop to clean up after GMime.  Without
+                        // it, GMime's streams are never completely unref'd, the
+                        // file descriptors aren't closed, and we run out and crash.
+                }
+                if (writer != null)
+                        writer.Close ();
+
+                return 0;
+        }
+
+        // A stripped version of LuceneCommon.BeagrepAnalyzer
+        internal class BeagrepAnalyzer : StandardAnalyzer {
+
+                public BeagrepAnalyzer ()
+                {
+                }
+
+                public override TokenStream TokenStream (string fieldName, TextReader reader)
+                {
+                        TokenStream outstream;
+                        outstream = base.TokenStream (fieldName, reader);
+
+                        return outstream;
+                }
+        }
 
 }

@@ -33,271 +33,269 @@ using System.Xml.Serialization;
 using System.Threading;
 using Mono.Unix;
 
-using GLib;
-
 using Beagrep.Util;
 
 namespace Beagrep {
 
-	public class UnixTransport : Transport {
-		
-		private string socket_name = null;
-		private UnixClient client = null;
-		private byte[] network_data = new byte [4096];
+        public class UnixTransport : Transport {
 
-		public UnixTransport ()
-			: this (null)
-		{			
-		}
+                private string socket_name = null;
+                private UnixClient client = null;
+                private byte[] network_data = new byte [4096];
 
-		public UnixTransport (string client_name)
-			: base (true)
-		{
-			// Use the default socket name when passed null
-			if (String.IsNullOrEmpty (client_name))
-				client_name = "socket";
+                public UnixTransport ()
+                        : this (null)
+                {
+                }
 
-			string storage_dir = PathFinder.GetRemoteStorageDir (false);
+                public UnixTransport (string client_name)
+                        : base (true)
+                {
+                        // Use the default socket name when passed null
+                        if (String.IsNullOrEmpty (client_name))
+                                client_name = "socket";
 
-			if (storage_dir == null)
-				throw new System.Net.Sockets.SocketException ();
+                        string storage_dir = PathFinder.GetRemoteStorageDir (false);
 
-			this.socket_name = Path.Combine (storage_dir, client_name);
-		}
+                        if (storage_dir == null)
+                                throw new System.Net.Sockets.SocketException ();
 
-		public override void Close ()
-		{
-			bool previously_closed = this.IsClosed;
+                        this.socket_name = Path.Combine (storage_dir, client_name);
+                }
 
-			// Important to set this before we close the
-			// UnixClient, since that will trigger the
-			// ReadCallback() method, reading 0 bytes off the
-			// wire, and we check this.closed in there.
-			this.IsClosed = true;
+                public override void Close ()
+                {
+                        bool previously_closed = this.IsClosed;
 
-			if (client != null) {
-				client.Close ();
-				client = null;
-			}
+                        // Important to set this before we close the
+                        // UnixClient, since that will trigger the
+                        // ReadCallback() method, reading 0 bytes off the
+                        // wire, and we check this.closed in there.
+                        this.IsClosed = true;
 
-			if (!previously_closed)
-				InvokeClosedEvent ();
-		}
+                        if (client != null) {
+                                client.Close ();
+                                client = null;
+                        }
 
-		protected override void SendRequest (RequestMessage request)
-		{
-			client = new UnixClient (this.socket_name);
-			client.SendBufferSize = 4096;
-			client.ReceiveBufferSize = 4096;
-			NetworkStream stream = client.GetStream ();
-			
-			base.SendRequest (request, stream);
-		}
-		
-		// This function will be called from its own thread
-		protected override void ReadCallback (IAsyncResult ar)
-		{
-			if (this.IsClosed)
-				return;
+                        if (!previously_closed)
+                                InvokeClosedEvent ();
+                }
 
-			try {
-				NetworkStream stream = this.client.GetStream ();
-				int bytes_read = 0;
+                protected override void SendRequest (RequestMessage request)
+                {
+                        client = new UnixClient (this.socket_name);
+                        client.SendBufferSize = 4096;
+                        client.ReceiveBufferSize = 4096;
+                        NetworkStream stream = client.GetStream ();
 
-				try { 
-					bytes_read = stream.EndRead (ar);
-				} catch (SocketException) {
-					Logger.Log.Debug ("Caught SocketException in ReadCallback");
-				} catch (IOException) {
-					Logger.Log.Debug ("Caught IOException in ReadCallback");
-				}
+                        base.SendRequest (request, stream);
+                }
 
-				// Connection hung up, we're through
-				if (bytes_read == 0) {
-					this.Close ();
-					return;
-				}
+                // This function will be called from its own thread
+                protected override void ReadCallback (IAsyncResult ar)
+                {
+                        if (this.IsClosed)
+                                return;
 
-				int end_index = -1;
-				int prev_index = 0;
+                        try {
+                                NetworkStream stream = this.client.GetStream ();
+                                int bytes_read = 0;
 
-				do {
-					// 0xff signifies end of message
-					end_index = Array.IndexOf<byte> (this.network_data, (byte) 0xff, prev_index);
+                                try {
+                                        bytes_read = stream.EndRead (ar);
+                                } catch (SocketException) {
+                                        Logger.Log.Debug ("Caught SocketException in ReadCallback");
+                                } catch (IOException) {
+                                        Logger.Log.Debug ("Caught IOException in ReadCallback");
+                                }
 
-					int bytes_count = (end_index == -1 ? bytes_read : end_index) - prev_index;
-					this.BufferStream.Write (this.network_data, prev_index, bytes_count);
+                                // Connection hung up, we're through
+                                if (bytes_read == 0) {
+                                        this.Close ();
+                                        return;
+                                }
 
-					if (end_index != -1) {
-						MemoryStream deserialize_stream = this.BufferStream;
-						this.BufferStream = new MemoryStream ();
-						
-						deserialize_stream.Seek (0, SeekOrigin.Begin);
-						HandleResponse (deserialize_stream);
-						
-						// Move past the end-of-message marker
-						prev_index = end_index + 1;
-					}
-				} while (end_index != -1);
+                                int end_index = -1;
+                                int prev_index = 0;
 
-				// Check to see if we're still connected, and keep
-				// looking for new data if so.
-				if (!this.IsClosed)
-					BeginRead ();
-			} catch (Exception e) {
-				Logger.Log.Error (e, "Got an exception while trying to read data:");
-			}
-		}
+                                do {
+                                        // 0xff signifies end of message
+                                        end_index = Array.IndexOf<byte> (this.network_data, (byte) 0xff, prev_index);
 
-		protected override void BeginRead ()
-		{
-			NetworkStream stream = this.client.GetStream ();
+                                        int bytes_count = (end_index == -1 ? bytes_read : end_index) - prev_index;
+                                        this.BufferStream.Write (this.network_data, prev_index, bytes_count);
 
-			Array.Clear (this.network_data, 0, this.network_data.Length);
-			stream.BeginRead (this.network_data, 0, this.network_data.Length, new AsyncCallback (ReadCallback), null);
-		}
+                                        if (end_index != -1) {
+                                                MemoryStream deserialize_stream = this.BufferStream;
+                                                this.BufferStream = new MemoryStream ();
 
-		public override void SendAsyncBlocking (RequestMessage request)
-		{
-			Exception ex = null;
+                                                deserialize_stream.Seek (0, SeekOrigin.Begin);
+                                                HandleResponse (deserialize_stream);
 
-			try {
-				SendRequest (request);
-			} catch (IOException e) {
-				ex = e;
-			} catch (SocketException e) {
-				ex = e;
-			}
+                                                // Move past the end-of-message marker
+                                                prev_index = end_index + 1;
+                                        }
+                                } while (end_index != -1);
 
-			if (ex != null) {
-				ResponseMessage resp = new ErrorResponse (ex);				
-				InvokeAsyncResponseEvent (resp);
-				return;
-			}
-			
-			NetworkStream stream = this.client.GetStream ();
-			MemoryStream deserialize_stream = new MemoryStream ();
+                                // Check to see if we're still connected, and keep
+                                // looking for new data if so.
+                                if (!this.IsClosed)
+                                        BeginRead ();
+                        } catch (Exception e) {
+                                Logger.Log.Error (e, "Got an exception while trying to read data:");
+                        }
+                }
 
-			// This buffer is annoyingly small on purpose, to avoid
-			// having to deal with the case of multiple messages
-			// in a single block.
-			byte [] buffer = new byte [32];
+                protected override void BeginRead ()
+                {
+                        NetworkStream stream = this.client.GetStream ();
 
-			while (!this.IsClosed) {
+                        Array.Clear (this.network_data, 0, this.network_data.Length);
+                        stream.BeginRead (this.network_data, 0, this.network_data.Length, new AsyncCallback (ReadCallback), null);
+                }
 
-				Array.Clear (buffer, 0, buffer.Length);
+                public override void SendAsyncBlocking (RequestMessage request)
+                {
+                        Exception ex = null;
 
-				int bytes_read;
-				bytes_read = stream.Read (buffer, 0, buffer.Length);
-				if (bytes_read == 0)
-					break;
+                        try {
+                                SendRequest (request);
+                        } catch (IOException e) {
+                                ex = e;
+                        } catch (SocketException e) {
+                                ex = e;
+                        }
 
-				int end_index;
-				end_index = Array.IndexOf<byte> (buffer, (byte) 0xff);
+                        if (ex != null) {
+                                ResponseMessage resp = new ErrorResponse (ex);
+                                InvokeAsyncResponseEvent (resp);
+                                return;
+                        }
 
-				if (end_index == -1) {
-					deserialize_stream.Write (buffer, 0, bytes_read);
-				} else {
-					deserialize_stream.Write (buffer, 0, end_index);
-					deserialize_stream.Seek (0, SeekOrigin.Begin);
+                        NetworkStream stream = this.client.GetStream ();
+                        MemoryStream deserialize_stream = new MemoryStream ();
 
-#if ENABLE_XML_DUMP
-					StreamReader r = new StreamReader (deserialize_stream);
-					Logger.Log.Debug ("Received response:\n{0}\n", r.ReadToEnd ());
-					deserialize_stream.Seek (0, SeekOrigin.Begin);
-#endif
+                        // This buffer is annoyingly small on purpose, to avoid
+                        // having to deal with the case of multiple messages
+                        // in a single block.
+                        byte [] buffer = new byte [32];
 
-					ResponseMessage resp;
-					try {
-						ResponseWrapper wrapper;
-						wrapper = (ResponseWrapper) resp_serializer.Deserialize (deserialize_stream);
-						
-						resp = wrapper.Message;
-					} catch (Exception e) {
-						resp = new ErrorResponse (e);
-					}
+                        while (!this.IsClosed) {
 
-					InvokeAsyncResponseEvent (resp);
+                                Array.Clear (buffer, 0, buffer.Length);
 
-					deserialize_stream.Close ();
-					deserialize_stream = new MemoryStream ();
-					if (bytes_read - end_index - 1 > 0)
-						deserialize_stream.Write (buffer, end_index + 1, bytes_read - end_index - 1);
-				}
-			}
-		}
+                                int bytes_read;
+                                bytes_read = stream.Read (buffer, 0, buffer.Length);
+                                if (bytes_read == 0)
+                                        break;
 
+                                int end_index;
+                                end_index = Array.IndexOf<byte> (buffer, (byte) 0xff);
 
-		public override ResponseMessage Send (RequestMessage request)
-		{
-			if (request.Keepalive)
-				throw new Exception ("A blocking connection on a keepalive request is not allowed");
-
-			Exception throw_me = null;
-
-			try {
-				SendRequest (request);
-			} catch (IOException e) {
-				throw_me = e;
-			} catch (SocketException e) {
-				throw_me = e;
-			}
-
-			if (throw_me != null)
-				throw new ResponseMessageException (throw_me);
-
-			NetworkStream stream = this.client.GetStream ();
-			int bytes_read, end_index = -1;
-
-			do {
-				bytes_read = stream.Read (this.network_data, 0, 4096);
-
-				//Logger.Log.Debug ("Read {0} bytes", bytes_read);
-
-				if (bytes_read > 0) {
-					// 0xff signifies end of message
-					end_index = Array.IndexOf<byte> (this.network_data, (byte) 0xff);
-					
-					this.BufferStream.Write (this.network_data, 0,
-								  end_index == -1 ? bytes_read : end_index);
-				}
-			} while (bytes_read > 0 && end_index == -1);
-
-			// It's possible that the server side shut down the
-			// connection before we had a chance to read any data.
-			// If this is the case, throw a rather descriptive
-			// exception.
-			if (this.BufferStream.Length == 0) {
-				this.BufferStream.Close ();
-				throw new ResponseMessageException ("Socket was closed before any data could be read");
-			}
-
-			this.BufferStream.Seek (0, SeekOrigin.Begin);
+                                if (end_index == -1) {
+                                        deserialize_stream.Write (buffer, 0, bytes_read);
+                                } else {
+                                        deserialize_stream.Write (buffer, 0, end_index);
+                                        deserialize_stream.Seek (0, SeekOrigin.Begin);
 
 #if ENABLE_XML_DUMP
-			StreamReader dump_reader = new StreamReader (this.BufferStream);
-			Logger.Log.Debug ("Received response:\n{0}\n", dump_reader.ReadToEnd ());
-			this.BufferStream.Seek (0, SeekOrigin.Begin);
+                                        StreamReader r = new StreamReader (deserialize_stream);
+                                        Logger.Log.Debug ("Received response:\n{0}\n", r.ReadToEnd ());
+                                        deserialize_stream.Seek (0, SeekOrigin.Begin);
 #endif
-			
-			ResponseMessage resp = null;
 
-			try {
-				ResponseWrapper wrapper = (ResponseWrapper)resp_serializer.Deserialize (this.BufferStream);
-				resp = wrapper.Message;
-			} catch (Exception e) {
-				this.BufferStream.Seek (0, SeekOrigin.Begin);
-				StreamReader r = new StreamReader (this.BufferStream);
-				throw_me = new ResponseMessageException (e, "Exception while deserializing response", String.Format ("Message contents: '{0}'", r.ReadToEnd ()));
-				this.BufferStream.Seek (0, SeekOrigin.Begin);
-			}
+                                        ResponseMessage resp;
+                                        try {
+                                                ResponseWrapper wrapper;
+                                                wrapper = (ResponseWrapper) resp_serializer.Deserialize (deserialize_stream);
 
-			this.BufferStream.Close ();
+                                                resp = wrapper.Message;
+                                        } catch (Exception e) {
+                                                resp = new ErrorResponse (e);
+                                        }
 
-			if (throw_me != null)
-				throw throw_me;
-			
-			return resp;
-		}
-	}
+                                        InvokeAsyncResponseEvent (resp);
+
+                                        deserialize_stream.Close ();
+                                        deserialize_stream = new MemoryStream ();
+                                        if (bytes_read - end_index - 1 > 0)
+                                                deserialize_stream.Write (buffer, end_index + 1, bytes_read - end_index - 1);
+                                }
+                        }
+                }
+
+
+                public override ResponseMessage Send (RequestMessage request)
+                {
+                        if (request.Keepalive)
+                                throw new Exception ("A blocking connection on a keepalive request is not allowed");
+
+                        Exception throw_me = null;
+
+                        try {
+                                SendRequest (request);
+                        } catch (IOException e) {
+                                throw_me = e;
+                        } catch (SocketException e) {
+                                throw_me = e;
+                        }
+
+                        if (throw_me != null)
+                                throw new ResponseMessageException (throw_me);
+
+                        NetworkStream stream = this.client.GetStream ();
+                        int bytes_read, end_index = -1;
+
+                        do {
+                                bytes_read = stream.Read (this.network_data, 0, 4096);
+
+                                //Logger.Log.Debug ("Read {0} bytes", bytes_read);
+
+                                if (bytes_read > 0) {
+                                        // 0xff signifies end of message
+                                        end_index = Array.IndexOf<byte> (this.network_data, (byte) 0xff);
+
+                                        this.BufferStream.Write (this.network_data, 0,
+                                                                  end_index == -1 ? bytes_read : end_index);
+                                }
+                        } while (bytes_read > 0 && end_index == -1);
+
+                        // It's possible that the server side shut down the
+                        // connection before we had a chance to read any data.
+                        // If this is the case, throw a rather descriptive
+                        // exception.
+                        if (this.BufferStream.Length == 0) {
+                                this.BufferStream.Close ();
+                                throw new ResponseMessageException ("Socket was closed before any data could be read");
+                        }
+
+                        this.BufferStream.Seek (0, SeekOrigin.Begin);
+
+#if ENABLE_XML_DUMP
+                        StreamReader dump_reader = new StreamReader (this.BufferStream);
+                        Logger.Log.Debug ("Received response:\n{0}\n", dump_reader.ReadToEnd ());
+                        this.BufferStream.Seek (0, SeekOrigin.Begin);
+#endif
+
+                        ResponseMessage resp = null;
+
+                        try {
+                                ResponseWrapper wrapper = (ResponseWrapper)resp_serializer.Deserialize (this.BufferStream);
+                                resp = wrapper.Message;
+                        } catch (Exception e) {
+                                this.BufferStream.Seek (0, SeekOrigin.Begin);
+                                StreamReader r = new StreamReader (this.BufferStream);
+                                throw_me = new ResponseMessageException (e, "Exception while deserializing response", String.Format ("Message contents: '{0}'", r.ReadToEnd ()));
+                                this.BufferStream.Seek (0, SeekOrigin.Begin);
+                        }
+
+                        this.BufferStream.Close ();
+
+                        if (throw_me != null)
+                                throw throw_me;
+
+                        return resp;
+                }
+        }
 }

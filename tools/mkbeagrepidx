@@ -4,6 +4,9 @@
 # projects.  And if TMPDIR is on /tmp, which is tmpfs using RAM, then
 # sort may fail
 export TMPDIR=~/.cache
+if test -e ~/external/local/bin/mkbeagrepidx; then
+    export LD_LIBRARY_PATH=$(echo ~/external/local/lib/)
+fi
 mkdir -p $TMPDIR
 mkdir -p ~/.logs
 
