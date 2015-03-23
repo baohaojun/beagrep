@@ -41,7 +41,6 @@ using Thread = System.Threading.Thread;
 namespace Beagrep.IndexHelper {
 
         class IndexHelperTool {
-
                 private static DateTime last_activity;
                 private static Server server;
 
@@ -113,22 +112,6 @@ namespace Beagrep.IndexHelper {
                         // on the system
                         if (Environment.GetEnvironmentVariable ("BEAGREP_EXERCISE_THE_DOG") != null)
                                 Log.Always ("BEAGREP_EXERCISE_THE_DOG is set");
-
-                        SystemPriorities.ReduceIoPriority ();
-
-                        int nice_to_set;
-
-                        // We set different nice values because the
-                        // internal implementation of SCHED_BATCH
-                        // unconditionally imposes a +5 penalty on
-                        // processes, and we want to be at nice +17,
-                        // because it has a nice timeslice.
-                        if (SystemPriorities.SetSchedulerPolicyBatch ())
-                                nice_to_set = 12;
-                        else
-                                nice_to_set = 17;
-
-                        SystemPriorities.Renice (nice_to_set);
 
                         Server.Init ();
 

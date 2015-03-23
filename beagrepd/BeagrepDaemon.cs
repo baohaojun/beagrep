@@ -487,10 +487,6 @@ namespace Beagrep.Daemon {
                         // Initialize GObject type system
                         g_type_init ();
 
-
-                        // Lower our CPU priority
-                        SystemPriorities.Renice (7);
-
                         QueryDriver.Init ();
                         Server.Init ();
 
@@ -502,12 +498,9 @@ namespace Beagrep.Daemon {
 
                         Shutdown.ShutdownEvent += OnShutdown;
 
-
                         // Defer all actual startup until the main loop is
                         // running.  That way shutdowns during the startup
                         // process work correctly.
-
-                        // Start our event loop.
 
                         // We're out of the main loop now, join all the
                         // running threads so we can exit cleanly.
