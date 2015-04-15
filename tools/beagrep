@@ -28,11 +28,14 @@ my $file_tag = "";
 my $grep_use_perl_regexp;
 my $replace_with;
 
+my @saved_args = @ARGV;
+my @fallback_dirs;
+
 open(my $log, ">>", glob("~/.beagrep.log")) or die "Error openning log";
 print $log "$0 @ARGV in " . $ENV{PWD} . "\n";
 
 mkdir glob("~/.logs");
-open(my $debuglog, ">", glob("~/.logs/beagrep.log")) or die "Error openning log";
+open(my $debuglog, ">", glob("~/.cache/system-config/logs/beagrep.log")) or die "Error openning log";
 
 sub debug(@) {
     print $debuglog "@_\n";
@@ -117,26 +120,35 @@ debug "pat is: $pat.\n";
 #   . substr(qx/beagrep-get-tokens $pat/, 0, -1)
 #   . "[0m'\n";
 
-my $beagrep_files = $use_tokens ? qx/beagrep-files $use_tokens/ : qx/beagrep-files $pat $additional_tokens/;
+my $beagrep_files = $use_tokens ? qx/beagrep-files -- $use_tokens/ : qx/beagrep-files -- $pat $additional_tokens/;
 my @beagrep_files = split(/\n/, $beagrep_files);
 
-if ($short_format) {
-    my $pwd_save = $pwd;
-    my $cache_dir = glob("~/.cache/for-code-reading");
-    my $db_dir = "$cache_dir/$pwd";
-    while (! -d "$db_dir/.beagrep") {
-        debug "no beagrep db at $db_dir";
-        $pwd =~ s!(.*)/.*!$1!;
-        if (not $pwd or $pwd eq "/") {
-            die "Can not find beagrep data for $pwd_save";
-        }
-        $db_dir = "$cache_dir/$pwd";
-        debug "change db to $db_dir";
+
+my $pwd_save = $pwd;
+my $cache_dir = glob("~/.cache/system-config/for-code-reading");
+my $db_dir = "$cache_dir/$pwd";
+while (! -d "$db_dir/.beagrep") {
+    debug "no beagrep db at $db_dir";
+    $pwd =~ s!(.*)/.*!$1!;
+    if (not $pwd or $pwd eq "/") {
+        die "Can not find beagrep data for $pwd_save";
     }
-    debug "found beagrep db at $db_dir";
-    chdir $pwd;
-    chomp($pwd = qx/readlink -f "`pwd`"/);
-    my $start = length($pwd) + 1;
+    $db_dir = "$cache_dir/$pwd";
+    debug "change db to $db_dir";
+}
+debug "found beagrep db at $db_dir";
+
+@fallback_dirs = glob("$db_dir/.beagrep-fallback.*");
+if (@fallback_dirs) {
+    debug "We have found fall back dirs: @fallback_dirs\n";
+} else {
+    debug "We have no fallbacks at $db_dir/.beagrep-fallback.*"
+}
+
+chdir $pwd;
+chomp($pwd = qx/pwd -P/);
+my $start = length($pwd) + 1;
+if ($short_format) {
     map {$_ = substr($_, $start)} @beagrep_files;
     printf "Using short format, Entering directory \`%s'\n", $pwd;
 }
@@ -183,5 +195,17 @@ if ($find_file_only || 1) {
         for (@beagrep_files) {
             print "$_:$file_default_line: [01;31m****************![0m\n" if $path_match_set{$_};
         }
+    }
+}
+
+if (@fallback_dirs and not $ENV{DOING_BEAGREP_FALLBACK}) {
+    $ENV{DOING_BEAGREP_FALLBACK} = 1;
+    for (@fallback_dirs) {
+        chomp($_ = qx(readlink -f $_));
+        $_ =~ s,/.*\.cache/system-config/for-code-reading,,;
+        print("Going to work in $_\n");
+        chdir $_ or die "Can't chdir to $_";
+        $ENV{PWD} = $_;
+        system("beagrep", @saved_args, "-d", "$_");
     }
 }

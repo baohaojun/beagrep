@@ -7,15 +7,23 @@ for (@ARGV) {
 
 $tokens = join(" ", @tokens);
 
-use String::ShellQuote;
-$tokens = shell_quote($tokens);
+if ($ENV{SOURCECODETAGSMODE} eq "true") {
+    $tokens =~ s/\.\*/*/g;
+} else {
+    use String::ShellQuote;
+    $tokens = shell_quote($tokens);
 
-$tokens = qx/beagrep-break-words $tokens/;
+    $tokens = qx/beagrep-break-words $tokens/;
+}
+
 
 $tokens =~ s/\r|\n/ /g;
 #$tokens =~ s/\b/*/g;
+if (@tokens == 1 and $tokens[0] !~ m/\s|\*/) {
+    $tokens = "\"$tokens\"";
+}
 print "$tokens\n";
 
 
 
-# appended_comma = True 
+# appended_comma = True
