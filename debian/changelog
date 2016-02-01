@@ -1,3 +1,9 @@
+beagrep (0.4.1-1) precise; urgency=low
+
+  * Make it work for precise
+
+ -- Bao Haojun (No Comment) <baohaojun@gmail.com>  Wed, 25 Jan 2012 23:15:11 +0800
+
 beagrep (0.4.0-1) precise; urgency=low
 
   * Initial release (Closes: #657453)
