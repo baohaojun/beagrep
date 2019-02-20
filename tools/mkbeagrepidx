@@ -7,8 +7,8 @@ export TMPDIR=~/.cache
 mkdir -p $TMPDIR
 mkdir -p ~/.cache/system-config/logs
 
-if test -x ~/external/local/bin/beagrep -a ! -e /usr/local/bin/mkbeagrepidx; then
-    export LD_LIBRARY_PATH=~/external/local/lib
+if test ! -e /usr/local/bin/mkbeagrepidx; then
+    . ~/src/github/beagrep/.setenv
 fi
 
 if [[ $PWD =~ /for-code-reading/ ]] && test -d .beagrep; then
@@ -64,6 +64,10 @@ then
     fi
 else
     outDir=~/.cache/system-config/for-code-reading/"`pwd`"
+fi
+
+if test -e "$outDir"/.before-for-code-reading; then
+    bash "$outDir"/.before-for-code-reading
 fi
 
 function mkcscope_files() {
@@ -179,6 +183,10 @@ function mkbeagrepidx() {
     fi
     function do_build() {
 
+        if test -e $outDir/$subdir/top-source-dir; then
+            rm $outDir/$subdir/top-source-dir;
+        fi
+
         beagrep-build-index --recursive \
                             "${ADDITIONAL_OPTIONS[@]}" \
                             --enable-deletion \
@@ -186,7 +194,9 @@ function mkbeagrepidx() {
                             "$relativeSrcDir" 2>&1
     }
 
-    do_build | tee "$outDir"/$subdir-build-log
+    if do_build; then
+        echo $PWD > $outDir/$subdir/../top-source-dir
+    fi | tee "$outDir"/$subdir-build-log
 
     if test "$SOURCECODETAGSMODE" != true; then
         cat "$outDir"/$subdir-build-log |

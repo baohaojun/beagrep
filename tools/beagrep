@@ -8,12 +8,8 @@ $ENV{'LANG'} = 'C';
 $ENV{'LC_ALL'} = 'C'; # fix grep too slow when ignore_case and gbk file recognized as binary
 
 delete $ENV{GREP_OPTIONS};
-if (-e glob("~/external/local/bin/mkbeagrepidx") and not -e "/usr/local/bin/mkbeagrepidx") {
-    if ($ENV{LD_LIBRARY_PATH}) {
-        $ENV{LD_LIBRARY_PATH} = glob("~/external/local/lib") . ":$ENV{LD_LIBRARY_PATH}"
-    } else {
-        $ENV{LD_LIBRARY_PATH} = glob("~/external/local/lib");
-    }
+if (not -e "/usr/local/bin/mkbeagrepidx") {
+    eval qx(cat ~/src/github/beagrep/.setenv.pl);
 }
 
 my $pat = '';
@@ -35,15 +31,17 @@ my $file_default_line = 1;
 my $file_tag = "";
 my $grep_use_perl_regexp;
 my $replace_with;
+my $entering_dir;
 
 my @saved_args = @ARGV;
 my @fallback_dirs;
+my $only_grep_myself;
 
-open(my $log, ">>", glob("~/.beagrep.log")) or die "Error openning log";
+open(my $log, ">>", "$ENV{HOME}/.beagrep.log") or die "Error openning log";
 print $log "$0 @ARGV in " . $ENV{PWD} . "\n";
 
-mkdir glob("~/.cache/system-config/logs");
-open(my $debuglog, ">", glob("~/.cache/system-config/logs/beagrep.log")) or die "Error openning log";
+mkdir "$ENV{HOME}/.cache/system-config/logs";
+open(my $debuglog, ">", "$ENV{HOME}/.cache/system-config/logs/beagrep.log") or die "Error openning log";
 
 sub debug(@) {
     print $debuglog "@_\n";
@@ -52,27 +50,38 @@ sub debug(@) {
 
 my $grep_add_opts = "";
 GetOptions(
-    "beagrep=s" => \$use_beagrep_for_dir,
-    "abc=s" => \$abc_base,
-    "top=s" => \$use_top_code_dir,
-    "a=s" => \$additional_tokens,
-    "t=s" => \$use_tokens,
-    "e=s" => \$pat,
-    "p=s" => \$pathpat,
-    "perl!" => \$grep_use_perl_regexp,
-    "grep=s" => \$grep_add_opts,
-    "v=s" => \$pathdeny,
-    "d=s" => \$pwd_opt,
-    "i!" => \$ignore_case,
-    "c!" => sub {$ENV{LC_ALL} = "C"},
-    "f!" => \$find_file_only,
-    "l!" => \$list_beagrep,
-    "s!" => \$short_format,
-    "rewrite=s" => \$replace_with,
-    ) or die;
+           "entering-dir=s" => \$entering_dir,
+           "beagrep=s" => \$use_beagrep_for_dir,
+           "abc=s" => \$abc_base,
+           "top=s" => \$use_top_code_dir,
+           "a=s" => \$additional_tokens,
+           "t=s" => \$use_tokens,
+           "e=s" => \$pat,
+           "p=s" => \$pathpat,
+           "perl!" => \$grep_use_perl_regexp,
+           "grep=s" => \$grep_add_opts,
+           "v=s" => \$pathdeny,
+           "d=s" => \$pwd_opt,
+           "i!" => \$ignore_case,
+           "c!" => sub {$ENV{LC_ALL} = "C"},
+           "f!" => \$find_file_only,
+           "l!" => \$list_beagrep,
+           "o!" => \$only_grep_myself,
+           "s!" => \$short_format,
+           "rewrite=s" => \$replace_with,
+          ) or die;
 
 if ($pwd_opt) {
     $abc_base = "";
+  }
+
+if (not $pat and @ARGV == 1) {
+  $pat = $ARGV[0];
+  shift;
+}
+
+if (@ARGV) {
+  die "Don't know how to handle extra args: @ARGV";
 }
 
 if ($replace_with) {
@@ -96,12 +105,9 @@ if ($grep_use_perl_regexp) {
 }
 
 
-die 'no regexp specified' unless $pat;
+die 'no regexp specified' unless $pat ne "";
 if ($pwd_opt) {
-    if (not -d $pwd_opt) {
-        $pwd_opt = qx(select-beagrep-dir $pwd_opt);
-    }
-    $pwd = realpath $pwd_opt;
+  $pwd = realpath $pwd_opt;
 }
 chdir $pwd or die "$pwd: $!";
 
@@ -145,12 +151,13 @@ if ($abc_base) {
     open($beagrep_files_pipe, "-|", "abc-x", "-b", "$abc_base", "abc-files", "$pat $additional_tokens");
 } else {
     open($beagrep_files_pipe, "-|", $beagrep_files_cmd);
+    debug "pipe cmd is: '$beagrep_files_cmd'"
 }
 
 
 
 my $pwd_save = $pwd;
-my $cache_dir = glob("~/.cache/system-config/for-code-reading");
+my $cache_dir = "$ENV{HOME}/.cache/system-config/for-code-reading";
 my $db_dir = "$cache_dir/$pwd";
 if ($use_beagrep_for_dir) {
     $use_beagrep_for_dir = realpath $use_beagrep_for_dir;
@@ -190,32 +197,37 @@ chdir $pwd;
 chomp($pwd = qx/pwd -P/);
 my $start = length($pwd) + 1;
 if ($short_format) {
-    printf "Using short format, Entering directory \`%s'\n", $pwd;
+    printf "Using short format, Entering directory \`%s'\n", ($entering_dir or $pwd);
 }
 
 if ($list_beagrep) {
-    while (<$beagrep_files_pipe>) {
-        $_ = substr($_, $start) if ($short_format and not $abc_base);
-        print "$_:$file_default_line: [01;31m****************![0m\n";
-    }
-    exit 0;
+  while (<$beagrep_files_pipe>) {
+    $_ = substr($_, $start) if ($short_format and not $abc_base);
+    chomp;
+    print "$_:$file_default_line: [01;31m****************![0m\n";
+  }
+  exit 0;
 }
 
 my @beagrep_files;
+my $grep;
 if (!$find_file_only) {
-    open(my $grep, "|xargs -d '\\n' -- grep -e $pat -H -n -I $ignore_case $grep_add_opts $grep_use_perl_regexp");
-
-    while (<$beagrep_files_pipe>) {
-        chomp;
-        $_ = substr($_, $start) if ($short_format and not $abc_base);
-        push @beagrep_files, $_;
-        next unless m/$pathpat/i;
-        next if m/$pathdeny/i;
-        print $grep "$_\n";
-    }
-    close $grep; # perldoc -f close, search for wait, the "xargs grep"
-                 # subprocess is finished when this returns
+    open($grep, "|xargs -d '\\n' -- grep -e $pat -H -n -I $ignore_case $grep_add_opts $grep_use_perl_regexp|(cut-long-lines||cat)");
 }
+
+while (<$beagrep_files_pipe>) {
+    chomp;
+    $_ = substr($_, $start) if ($short_format and not $abc_base);
+    push @beagrep_files, $_;
+    next unless m/$pathpat/i;
+    next if m/$pathdeny/i;
+    next unless -f $_;
+    print $grep "$_\n" unless $find_file_only;
+}
+
+close $grep unless $find_file_only;
+# perldoc -f close, search for wait, the "xargs grep"
+# subprocess is finished when this returns
 
 #see [[http://baohaojun.wordpress.com/2010/05/06/beagrep-grep-sh%E5%8A%9F%E8%83%BD%E5%8F%88%E5%8F%98%E5%BC%BA%E5%A4%A7%E4%BA%86/]] for why
 if ($find_file_only || 1) {
@@ -223,6 +235,11 @@ if ($find_file_only || 1) {
     debug "pat_implicit_path is $pat_implicit_path, pathpat is $pathpat";
     for (@beagrep_files) {
         $path_match_set{$_} = 1 if m/$pat_implicit_path/i and m/$pathpat/i;
+        if (not $path_match_set{$_} and -l $_) {
+            my $t = readlink($_);
+            $path_match_set{$_} = 2 if $t =~ m/$pat_implicit_path/i and $t =~ m/$pathpat/i;
+        }
+
     }
     if ($find_file_only && keys %path_match_set > 1 && $file_tag) {
         my $files = qx(grep-gtags -e $file_tag|perl -ne "if (m/:[0-9]+:/) {s/:[0-9]+:.*//; print}"|sort -u);
@@ -232,18 +249,18 @@ if ($find_file_only || 1) {
                 if $path_match_set{$_} and m,/$pat_implicit_path$,; # the `and' part is to make file name match totally
         }
     } else {
-        for (@beagrep_files) {
-            print "$_:$file_default_line: [01;31m****************![0m\n" if $path_match_set{$_};
+        for (sort keys %path_match_set) {
+            my $line = $file_default_line + $path_match_set{$_} - 1;
+            print "$_:$line: [01;31m****************![0m\n";
         }
     }
 }
 
-if (@fallback_dirs and not $ENV{DOING_BEAGREP_FALLBACK}) {
+if (@fallback_dirs and not $ENV{DOING_BEAGREP_FALLBACK} and not $only_grep_myself) {
     $ENV{DOING_BEAGREP_FALLBACK} = 1;
     for (@fallback_dirs) {
         $_ = realpath $_;
         $_ =~ s,/.*\.cache/system-config/for-code-reading,,;
-        print("Going to work in $_\n");
         chdir $_ or die "Can't chdir to $_";
         $ENV{PWD} = $_;
         system("beagrep", @saved_args, "-d", "$_");

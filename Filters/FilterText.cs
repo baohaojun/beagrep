@@ -81,6 +81,9 @@ namespace Beagrep.Filters {
 
                 protected override void RegisterSupportedTypes ()
                 {
+                        if (Environment.GetEnvironmentVariable("SOURCECODETAGSMODE") == "true") {
+                                AddSupportedFlavor (FilterFlavor.NewFromMimeType ("application/x-java-archive"));
+                        }
                         AddSupportedFlavor (FilterFlavor.NewFromMimeType ("application/xhtml+xml"));
                         AddSupportedFlavor (FilterFlavor.NewFromMimeType ("application/x-sln"));
                         AddSupportedFlavor (FilterFlavor.NewFromMimeType ("application/xml"));
@@ -130,7 +133,7 @@ namespace Beagrep.Filters {
                         // Extremely large files of type text/plain are usually log files,
                         // data files, or other bits of not-particularly-human-readable junk
                         // that will tend to clog up our indexes.
-                        if (file.Length > LENGTH_CUTOFF) {
+                        if (file.Length > LENGTH_CUTOFF && ! sourceCodeTagsMode) {
                                 Beagrep.Util.Logger.Log.Debug ("{0} is too large to filter!", file.FullName);
                                 Error ();
                                 return;
