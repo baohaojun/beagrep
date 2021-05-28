@@ -133,3 +133,4 @@ tools/beagrep-static-query
 *.exe.mdb
 tools/beagrep-break-words
 compile
+obj
