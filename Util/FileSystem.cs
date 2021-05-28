@@ -28,7 +28,7 @@ using System;
 using System.IO;
 
 namespace Beagrep.Util {
-	
+
 	public class FileSystem {
 
 		// Value returned by GetLastWriteTimeUtc() for files which
@@ -82,6 +82,17 @@ namespace Beagrep.Util {
 			System.Text.StringBuilder sb = new System.Text.StringBuilder();
 			int n = Mono.Unix.Native.Syscall.readlink(path, sb);
 			if (n >= 0) {
+				if (n == sb.Capacity) {
+					sb.EnsureCapacity(4096);
+					n = Mono.Unix.Native.Syscall.readlink(path, sb);
+					if (n < 0) {
+						throw new System.IO.IOException(
+							String.Format (
+								"Readlink failed for {0}",
+								path)
+						);
+					}
+				}
 				return sb.ToString(0, n);
 			}
 			return "";
@@ -131,30 +142,30 @@ namespace Beagrep.Util {
 		}
 
 		// Based on Path.GetTempFileName() from Mono
-                public static string GetTempFileName (string extension)
-                {
-                        FileStream f = null;
-                        string path;
-                        Random rnd;
-                        int num = 0;
+		public static string GetTempFileName (string extension)
+		{
+			FileStream f = null;
+			string path;
+			Random rnd;
+			int num = 0;
 
 			if (! String.IsNullOrEmpty (extension) && extension [0] != '.')
 				extension = "." + extension;
 
-                        rnd = new Random ();
-                        do {
-                                num = rnd.Next ();
-                                num++;
-                                path = Path.Combine (Path.GetTempPath(), "tmp" + num.ToString("x") + extension);
+			rnd = new Random ();
+			do {
+				num = rnd.Next ();
+				num++;
+				path = Path.Combine (Path.GetTempPath(), "tmp" + num.ToString("x") + extension);
 
-                                try {
-                                        f = new FileStream (path, FileMode.CreateNew);
-                                } catch { }
-                        } while (f == null);
-                        
-                        f.Close();
-                        return path;
-                }
+				try {
+					f = new FileStream (path, FileMode.CreateNew);
+				} catch { }
+			} while (f == null);
+
+			f.Close();
+			return path;
+		}
 
 		// Windows (and hence .Net File.Delete) requires write
 		// permission on a file to delete it. This is different from
@@ -163,7 +174,7 @@ namespace Beagrep.Util {
 		public static void PosixDelete (string path)
 		{
 			int ret = Mono.Unix.Native.Syscall.unlink (path);
-		    	if (ret == -1)
+			if (ret == -1)
 				throw new System.IO.IOException (String.Format (
 					    "Delete failed for {0}: {1}",
 					    path,
