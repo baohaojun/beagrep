@@ -79,7 +79,7 @@ namespace Beagrep.Util {
 		}
 
 		static public string Readlink (string path) {
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
 			int n = Mono.Unix.Native.Syscall.readlink(path, sb);
 			if (n >= 0) {
 				if (n == sb.Capacity) {
