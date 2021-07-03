@@ -1,8 +1,20 @@
 #!/usr/bin/env perl
-
-use Getopt::Long;
 use strict;
+use v5.10.1; # for say and switch
+use autodie qw(:all);
+use IPC::System::Simple qw(run runx capture capturex $EXITVAL EXIT_ANY);
+binmode(STDOUT, ":utf8");
+binmode(STDERR, ":utf8");
+use Encode;
+use utf8;
+@ARGV = map {decode_utf8 $_} @ARGV;
+
+use feature 'signatures';
+no warnings "experimental::signatures";
+
+
 use Cwd 'realpath';
+use File::Path;
 use String::ShellQuote;
 $ENV{'LANG'} = 'C';
 $ENV{'LC_ALL'} = 'C'; # fix grep too slow when ignore_case and gbk file recognized as binary
@@ -64,192 +76,192 @@ my $top_code_dir = 0;
 my $use_tokens = "";
 
 my $handler_help = sub {
-    print ;
-    print "\n\n选项和参数：\n";
-    printf "%6s", '';
-    printf "%-24s", '--abc-base=ABC-BASE';
-    if (length('--abc-base=ABC-BASE') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+  print ;
+  print "\n\n选项和参数：\n";
+  printf "%6s", '';
+  printf "%-24s", '--abc-base=ABC-BASE';
+  if (length('--abc-base=ABC-BASE') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-a, ';
-    printf "%-24s", '--additional-tokens=ADDITIONAL-TOKENS';
-    if (length('--additional-tokens=ADDITIONAL-TOKENS') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-a, ';
+  printf "%-24s", '--additional-tokens=ADDITIONAL-TOKENS';
+  if (length('--additional-tokens=ADDITIONAL-TOKENS') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--beagrep-from-dir=BEAGREP-FROM-DIR';
-    if (length('--beagrep-from-dir=BEAGREP-FROM-DIR') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--beagrep-from-dir=BEAGREP-FROM-DIR';
+  if (length('--beagrep-from-dir=BEAGREP-FROM-DIR') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--entering-dir=ENTERING-DIR';
-    if (length('--entering-dir=ENTERING-DIR') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--entering-dir=ENTERING-DIR';
+  if (length('--entering-dir=ENTERING-DIR') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-f, ';
-    printf "%-24s", '--[no]find-file-only';
-    if (length('--[no]find-file-only') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-f, ';
+  printf "%-24s", '--[no]find-file-only';
+  if (length('--[no]find-file-only') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--grep-additional-opts=GREP-ADDITIONAL-OPTS';
-    if (length('--grep-additional-opts=GREP-ADDITIONAL-OPTS') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--grep-additional-opts=GREP-ADDITIONAL-OPTS';
+  if (length('--grep-additional-opts=GREP-ADDITIONAL-OPTS') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-i, ';
-    printf "%-24s", '--[no]ignore-case';
-    if (length('--[no]ignore-case') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-i, ';
+  printf "%-24s", '--[no]ignore-case';
+  if (length('--[no]ignore-case') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--[no]is-beagrep';
-    if (length('--[no]is-beagrep') > 24 and length("测试当前目录是否有 beagrep 索引数据") > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", "测试当前目录是否有 beagrep 索引数据";
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--[no]is-beagrep';
+  if (length('--[no]is-beagrep') > 24 and length("测试当前目录是否有 beagrep 索引数据") > 0) {
     print "\n";
-    printf "%6s", '-l, ';
-    printf "%-24s", '--[no]list-beagrep';
-    if (length('--[no]list-beagrep') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", "测试当前目录是否有 beagrep 索引数据";
+  print "\n";
+  printf "%6s", '-l, ';
+  printf "%-24s", '--[no]list-beagrep';
+  if (length('--[no]list-beagrep') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-o, ';
-    printf "%-24s", '--[no]only-grep-myself';
-    if (length('--[no]only-grep-myself') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-o, ';
+  printf "%-24s", '--[no]only-grep-myself';
+  if (length('--[no]only-grep-myself') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-p, ';
-    printf "%-24s", '--path-pat=PATH-PAT';
-    if (length('--path-pat=PATH-PAT') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-p, ';
+  printf "%-24s", '--path-pat=PATH-PAT';
+  if (length('--path-pat=PATH-PAT') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--[no]perl-style-regexp';
-    if (length('--[no]perl-style-regexp') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--[no]perl-style-regexp';
+  if (length('--[no]perl-style-regexp') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-e, ';
-    printf "%-24s", '--regexp-pat=REGEXP-PAT';
-    if (length('--regexp-pat=REGEXP-PAT') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-e, ';
+  printf "%-24s", '--regexp-pat=REGEXP-PAT';
+  if (length('--regexp-pat=REGEXP-PAT') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--replace-with=REPLACE-WITH';
-    if (length('--replace-with=REPLACE-WITH') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--replace-with=REPLACE-WITH';
+  if (length('--replace-with=REPLACE-WITH') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-v, ';
-    printf "%-24s", '--reverse-path-filter=REVERSE-PATH-FILTER';
-    if (length('--reverse-path-filter=REVERSE-PATH-FILTER') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-v, ';
+  printf "%-24s", '--reverse-path-filter=REVERSE-PATH-FILTER';
+  if (length('--reverse-path-filter=REVERSE-PATH-FILTER') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-s, ';
-    printf "%-24s", '--[no]short-format';
-    if (length('--[no]short-format') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-s, ';
+  printf "%-24s", '--[no]short-format';
+  if (length('--[no]short-format') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-d, ';
-    printf "%-24s", '--source-dir=SOURCE-DIR';
-    if (length('--source-dir=SOURCE-DIR') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-d, ';
+  printf "%-24s", '--source-dir=SOURCE-DIR';
+  if (length('--source-dir=SOURCE-DIR') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '';
-    printf "%-24s", '--[no]top-code-dir';
-    if (length('--[no]top-code-dir') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '';
+  printf "%-24s", '--[no]top-code-dir';
+  if (length('--[no]top-code-dir') > 24 and length() > 0) {
     print "\n";
-    printf "%6s", '-t, ';
-    printf "%-24s", '--use-tokens=USE-TOKENS';
-    if (length('--use-tokens=USE-TOKENS') > 24 and length() > 0) {
-        print "\n";
-        printf "%30s", "";
-    }
-    printf "%s", ;
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
+  printf "%6s", '-t, ';
+  printf "%-24s", '--use-tokens=USE-TOKENS';
+  if (length('--use-tokens=USE-TOKENS') > 24 and length() > 0) {
     print "\n";
+    printf "%30s", "";
+  }
+  printf "%s", ;
+  print "\n";
 
-    my $exit_value = 0;
-    if (@_ && $_[0] ne "help" && $_[1] != 1) {
-        $exit_value = shift @_;
-        print "@_\n";
-    }
+  my $exit_value = 0;
+  if (@_ && $_[0] ne "help" && $_[1] != 1) {
+    $exit_value = shift @_;
+    print "@_\n";
+  }
 
-    exit($exit_value);
+  exit($exit_value);
 };
 
 GetOptions (
-    'abc-base=s' => \$abc_base,
-    'additional-tokens|a=s' => \$additional_tokens,
-    'beagrep-from-dir=s' => \$beagrep_from_dir,
-    'entering-dir=s' => \$entering_dir,
-    'find-file-only|f!' => \$find_file_only,
-    'grep-additional-opts=s' => \$grep_additional_opts,
-    'ignore-case|i!' => \$ignore_case,
-    'is-beagrep!' => \$is_beagrep,
-    'list-beagrep|l!' => \$list_beagrep,
-    'only-grep-myself|o!' => \$only_grep_myself,
-    'path-pat|p=s' => \$path_pat,
-    'perl-style-regexp!' => \$perl_style_regexp,
-    'regexp-pat|e=s' => \$regexp_pat,
-    'replace-with=s' => \$replace_with,
-    'reverse-path-filter|v=s' => \$reverse_path_filter,
-    'short-format|s!' => \$short_format,
-    'source-dir|d=s' => \$source_dir,
-    'top-code-dir!' => \$top_code_dir,
-    'use-tokens|t=s' => \$use_tokens,
-    'help|h!' => \&$handler_help,
-);
+            'abc-base=s' => \$abc_base,
+            'additional-tokens|a=s' => \$additional_tokens,
+            'beagrep-from-dir=s' => \$beagrep_from_dir,
+            'entering-dir=s' => \$entering_dir,
+            'find-file-only|f!' => \$find_file_only,
+            'grep-additional-opts=s' => \$grep_additional_opts,
+            'ignore-case|i!' => \$ignore_case,
+            'is-beagrep!' => \$is_beagrep,
+            'list-beagrep|l!' => \$list_beagrep,
+            'only-grep-myself|o!' => \$only_grep_myself,
+            'path-pat|p=s' => \$path_pat,
+            'perl-style-regexp!' => \$perl_style_regexp,
+            'regexp-pat|e=s' => \$regexp_pat,
+            'replace-with=s' => \$replace_with,
+            'reverse-path-filter|v=s' => \$reverse_path_filter,
+            'short-format|s!' => \$short_format,
+            'source-dir|d=s' => \$source_dir,
+            'top-code-dir!' => \$top_code_dir,
+            'use-tokens|t=s' => \$use_tokens,
+            'help|h!' => \&$handler_help,
+           );
 
 
 ## end generated code
@@ -262,11 +274,11 @@ my $file_tag = "";
 open(my $log, ">>", "$ENV{HOME}/.beagrep.log") or die "Error openning log";
 print $log "$0 @ARGV in " . $ENV{PWD} . "\n";
 
-mkdir "$ENV{HOME}/.cache/system-config/logs";
+mkpath "$ENV{HOME}/.cache/system-config/logs";
 open(my $debuglog, ">", "$ENV{HOME}/.cache/system-config/logs/beagrep.log") or die "Error openning log";
 
-sub debug(@) {
-    print $debuglog "@_\n";
+sub debug(@args) {
+    print $debuglog "@args\n";
 }
 
 my $pwd = realpath(".");
@@ -391,14 +403,35 @@ if ($abc_base) {
     debug "pipe cmd is: '$beagrep_files_cmd'"
 }
 
+my %all_db_dirs =
+  (
+   $db_dir => 1,
+  );
 
+sub get_all_fallback_dirs($db_dir) {
+  my @extra_dirs = grep {
+    if (not $all_db_dirs{$_}) {
+      $all_db_dirs{$_} = 1;
+      1;
+    } else {
+      0;
+    }
+  } map {
+    $_ = realpath $_;
+  } glob("$db_dir/.beagrep-fallback.*");
 
-@fallback_dirs = glob("$db_dir/.beagrep-fallback.*");
-if (@fallback_dirs) {
-    debug "We have found fall back dirs: @fallback_dirs\n";
-} else {
+  if (@extra_dirs) {
+    debug "We have found fall back dirs: @extra_dirs\n";
+    push @fallback_dirs, @extra_dirs;
+    map {
+      get_all_fallback_dirs($_)
+    } @extra_dirs;
+  } else {
     debug "We have no fallbacks at $db_dir/.beagrep-fallback.*"
+  }
 }
+
+get_all_fallback_dirs($db_dir);
 
 chdir $pwd;
 chomp($pwd = qx/pwd -P/);
@@ -466,7 +499,6 @@ if ($find_file_only || 1) {
 if (@fallback_dirs and not $ENV{DOING_BEAGREP_FALLBACK} and not $only_grep_myself) {
     $ENV{DOING_BEAGREP_FALLBACK} = 1;
     for (@fallback_dirs) {
-        $_ = realpath $_;
         $_ =~ s,/.*\.cache/system-config/for-code-reading,,;
         chdir $_ or die "Can't chdir to $_";
         $ENV{PWD} = $_;
