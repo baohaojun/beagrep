@@ -405,7 +405,7 @@ if ($abc_base) {
 
 my %all_db_dirs =
   (
-   $db_dir => 1,
+   realpath($db_dir) => 1,
   );
 
 sub get_all_fallback_dirs($db_dir) {
@@ -421,7 +421,7 @@ sub get_all_fallback_dirs($db_dir) {
   } glob("$db_dir/.beagrep-fallback.*");
 
   if (@extra_dirs) {
-    debug "We have found fall back dirs: @extra_dirs\n";
+    debug "We have found fall back dirs for $db_dir: @extra_dirs\n";
     push @fallback_dirs, @extra_dirs;
     map {
       get_all_fallback_dirs($_)
